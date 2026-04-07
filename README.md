@@ -253,14 +253,42 @@ These aren't gaps — they're choices made during consensus review:
 | 3 named challenge modes at fixed rounds | Single adaptive instruction | Same effect, less ceremony. Consensus review called the modes "cargo cult." |
 | Full interview transcript in spec | Synthesized summary only | Keeps specs readable and focused. Full transcript is ephemeral. |
 
+## Roadmap
+
+```
+v1.0 (current): Skills only — verbose but functional, zero dependencies
+v2.0 (next):    Hermes plugin — infrastructure layer for natural skills
+v3.0 (future):  Upstream PR to NousResearch/hermes-agent optional-skills/
+```
+
+### v2.0: The Plugin Layer
+
+v1.0 skills work but are verbose — roughly half of each SKILL.md is infrastructure
+plumbing (loading role prompts, constructing context strings, managing state files)
+rather than workflow logic. This is because OMC skills get infrastructure from Claude
+Code's plugin scoping: role prompt auto-loading, model routing, lifecycle hooks. Our
+skills encode all of that in prose.
+
+The v2.0 plugin (`~/.hermes/plugins/omh/`) would register custom tools and hooks:
+
+| Component | What It Does | Impact |
+|-----------|-------------|--------|
+| `omh_delegate` tool | Wraps delegate_task with auto role prompt loading + model routing | Delegation shrinks from a paragraph to one tool call |
+| `omh_state_*` tools | Atomic read/write/check for `.omh/` state files | Eliminates manual JSON parsing in skills |
+| `omh_gather_evidence` tool | Runs build/test/lint, captures + truncates output | Verification boilerplate disappears |
+| `on_session_end` hook | Ensures clean state preservation when OMH modes are active | Mechanical safety net for persistence |
+| Model tier routing | Maps roles to Haiku/Sonnet/Opus via config | 30-50% token cost savings |
+
+Skills would stay the same but get shorter — expressing intent instead of mechanism.
+See [docs/plugin-proposal.md](docs/plugin-proposal.md) for the full design.
+
 ## Distribution
 
 OMH is distributed as a GitHub tap for the Hermes Skills Hub:
 
-```
-Phase 1 (current): GitHub tap — witt3rd/oh-my-hermes
-Phase 2 (planned): PR to NousResearch/hermes-agent optional-skills/
-Phase 3 (if needed): pip plugin for mechanical persistence hooks
+```bash
+hermes skills tap add witt3rd/oh-my-hermes
+hermes skills install omh-ralplan
 ```
 
 ## License
