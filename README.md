@@ -10,8 +10,8 @@ OMHA brings structured multi-agent workflows to Hermes Agent through composable 
 |-------|-------------|--------|
 | **omha-ralplan** | Consensus planning: Planner → Architect → Critic debate until agreement | Complete |
 | **omha-deep-interview** | Socratic requirements interview with coverage tracking | Complete |
-| **omha-ralph** | Verified execution: implement → verify → iterate until done | Consensus plan approved |
-| **omha-autopilot** | Full pipeline composing all three skills end-to-end | Stub |
+| **omha-ralph** | Verified execution: implement → verify → iterate until done | Complete |
+| **omha-autopilot** | Full pipeline composing all three skills end-to-end | Complete |
 
 ## Origin Story
 
