@@ -213,6 +213,46 @@ The `docs/` directory contains analysis of the source implementations:
 | Subagents lack `execute_code` | Children reason step-by-step | Orchestrator handles batch operations; subagents use tools directly |
 | Subagents lack `memory` | Children can't write to shared memory | State passed via files and delegate_task context |
 
+## What's Missing (Honest Gaps)
+
+OMHA v1.0 replicates the core execution pipeline (~85%) but not the full OMC feature surface (~60% overall). Here's what we don't do.
+
+### Can't Do With Skills Alone
+
+These require Hermes Agent code changes or plugins:
+
+| Gap | What OMC Has | Why We Can't | Path Forward |
+|-----|-------------|-------------|--------------|
+| **Stop prevention** | `persistent-mode.cjs` — 1144 lines that mechanically block Claude Code from exiting | Hermes has no `Stop` lifecycle hook. Skills can instruct but can't enforce. | PR: `pre_session_end` veto hook. Our workaround: state files + re-invocation. |
+| **LSP integration** | 12 IDE-grade tools (hover, references, rename, diagnostics) | Not a skill-level feature — requires tool registration or MCP server. | PR or MCP server package. We use terminal-based tools (ripgrep, linters). |
+| **ast-grep** | Structural code search/replace using AST matching | Same — needs tool registration. | Terminal fallback: `ast-grep` CLI works if installed. |
+| **HUD / observability** | Real-time statusline with token tracking, agent activity | No display API in Hermes skills. | Plugin using `post_tool_call` hook. We use `todo` + progress logs. |
+| **Rate limit auto-resume** | `omc wait` daemon monitors for resets | No equivalent daemon mechanism. | Hermes has credential pool rotation, which handles most cases. |
+
+### Haven't Built Yet (Could Be Skills)
+
+| Gap | What OMC Has | Priority | Effort |
+|-----|-------------|----------|--------|
+| **19 more agent roles** | designer, qa-tester, scientist, git-master, tracer, vision, product-manager, ux-researcher, etc. We have 10 of OMC's 29. | Medium | Low per role — add as needed |
+| **Deslop pass** | `ai-slop-cleaner` as mandatory post-process in ralph | Medium | New skill |
+| **Model tier routing** | Auto-routes Haiku/Sonnet/Opus by task complexity. We use one model for all. | Low-Medium | Routing logic in autopilot |
+| **Ontology extraction** | Tracks entities across interview rounds with stability ratios | Medium-High | Deep-interview v1.1 |
+| **Brownfield explore-first** | Scans codebase before asking the user | Medium | Deep-interview v1.1 |
+| **Team mode** | Native agent teams with direct inter-agent messaging | Low | Fundamental architecture difference — Hermes subagents are isolated |
+| **Multi-model orchestration** | Claude + Codex + Gemini workers via tmux | Low | Niche; ACP transport partially addresses |
+
+### Deliberate Design Differences
+
+These aren't gaps — they're choices made during consensus review:
+
+| OMC Does | OMHA Does | Why |
+|----------|-----------|-----|
+| Float ambiguity scores (0.0-1.0) with auto-exit | Coarse bins (HIGH/MEDIUM/LOW/CLEAR), user-confirmed exit | LLM self-assessment lacks decimal precision. The user is the authority on readiness. |
+| In-session persistence loop | One-task-per-invocation + state files | Hermes can't prevent exit mechanically. State-based resume is more robust and eliminates context exhaustion. |
+| Auto-detect brownfield | Ask the user | Checking for `package.json` etc. is unreliable and presumptuous. |
+| 3 named challenge modes at fixed rounds | Single adaptive instruction | Same effect, less ceremony. Consensus review called the modes "cargo cult." |
+| Full interview transcript in spec | Synthesized summary only | Keeps specs readable and focused. Full transcript is ephemeral. |
+
 ## Distribution
 
 OMHA is distributed as a GitHub tap for the Hermes Skills Hub:
