@@ -40,53 +40,71 @@ Before planning, gather project context:
 1. Read relevant files to understand the codebase structure
 2. Identify existing patterns, conventions, and constraints
 3. Summarize context into a brief (~500 words) that all agents will receive
+4. Load all role prompts from `references/` — you'll need them for delegate_task context
 
 ### Phase 1: Planning Loop (max 3 rounds)
 
-Each round proceeds sequentially:
+**Round 1 — All Sequential** (Planner → Architect → Critic):
 
-**Step 1 — Planner**
-Delegate to a subagent with the Planner role prompt (load from `references/role-planner.md`):
+**Step 1 — Planner** (single delegate_task)
+Load `references/role-planner.md`. Include the FULL role prompt text in the context, not a reference to it — subagents can't load skill files.
 ```
 delegate_task(
-    goal="Create an implementation plan for: {goal}",
-    context="{role_prompt}\n\n{project_context}\n\n{previous_feedback if any}"
+    goal="Create an implementation plan for: {goal}\n\n{detailed_requirements}",
+    context="{full_role_prompt_text}\n\n---\n\n# Project Context\n\n{project_context}"
+)
+```
+The goal should include the full specification — don't assume the subagent knows anything.
+
+**Step 2 — Architect Review** (single delegate_task)
+Load `references/role-architect.md`. Pass the Planner's complete output.
+```
+delegate_task(
+    goal="Review this implementation plan for architectural soundness:\n\nPLAN:\n{planner_output}",
+    context="{full_role_prompt_text}\n\n---\n\n# Project Context\n\n{project_context}"
 )
 ```
 
-**Step 2 — Architect Review**
-Delegate to a subagent with the Architect role prompt (load from `references/role-architect.md`):
+**Step 3 — Critic Challenge** (single delegate_task)
+Load `references/role-critic.md`. Pass BOTH the plan AND the architect review.
 ```
 delegate_task(
-    goal="Review this implementation plan for architectural soundness",
-    context="{role_prompt}\n\n{project_context}\n\nPLAN TO REVIEW:\n{planner_output}"
-)
-```
-
-**Step 3 — Critic Challenge**
-Delegate to a subagent with the Critic role prompt (load from `references/role-critic.md`):
-```
-delegate_task(
-    goal="Critically challenge this plan and architect review",
-    context="{role_prompt}\n\n{project_context}\n\nPLAN:\n{planner_output}\n\nARCHITECT REVIEW:\n{architect_output}"
+    goal="Critically challenge this plan and architect review:\n\nPLAN SUMMARY:\n{plan_summary}\n\nARCHITECT REVIEW:\n{architect_verdict_and_concerns}",
+    context="{full_role_prompt_text}\n\n---\n\n# Project Context\n\n{project_context}"
 )
 ```
 
 **Step 4 — Consensus Check**
 Check all three verdicts:
 - If ALL three are APPROVE → consensus reached, proceed to output
-- If any is REJECT or REQUEST_CHANGES → incorporate feedback, loop back to Step 1
-- If round 3 and no consensus → output the best plan with unresolved concerns noted
+- If any is REQUEST_CHANGES → collect all feedback, proceed to Round 2
+- If any is REJECT → output concerns and ask user whether to continue
+
+**Round 2+ — Planner Revises, Architect + Critic Re-review in Parallel**:
+
+When looping, the Planner must receive ALL feedback (Architect concerns + Critic critical issues + warnings). Be explicit about what needs to change — include the specific concern IDs (A1, C1, W1, etc.).
+
+For Round 2 re-reviews, Architect and Critic are independent — run them in parallel via batch delegate_task:
+```
+delegate_task(tasks=[
+    {goal: "Re-review revised plan...", context: "{architect_role}..."},
+    {goal: "Re-review revised plan...", context: "{critic_role}..."}
+])
+```
+This saves significant time (Round 2 re-reviews ran 14 seconds parallel vs ~120 seconds sequential).
 
 ### Phase 2: Output
 
-Write the consensus plan to `.omha/plans/ralplan-{timestamp}.md` containing:
-1. The final plan (from Planner)
-2. Architect approval notes
-3. Critic approval notes (or unresolved concerns)
-4. Round count and consensus status
+Write the consensus plan to `.omha/plans/ralplan-{slug}.md` containing:
+1. Consensus status (rounds, verdicts per round)
+2. Revision summary (what changed from feedback)
+3. The final plan (tasks with dependencies, complexity, acceptance criteria)
+4. Risks and open questions
+5. Round count and consensus status
 
-Also write a summary to the user.
+Use a descriptive slug, not a timestamp: `ralplan-deep-interview-consensus.md` not `ralplan-20260407.md`.
+
+Also write a summary to the user with the key design decisions that emerged from the debate.
 
 ## State Management
 
@@ -97,7 +115,7 @@ State is tracked in `.omha/state/ralplan-state.json`:
   "round": 1,
   "phase": "planner|architect|critic|complete",
   "consensus": false,
-  "plan_file": ".omha/plans/ralplan-{timestamp}.md"
+  "plan_file": ".omha/plans/ralplan-{slug}.md"
 }
 ```
 
@@ -109,7 +127,12 @@ When the user requests deliberate mode or uses "deliberate", "ADR", or "decision
 
 ## Pitfalls
 
+- **Don't pass file references to subagents** — subagents can't load skill files. Copy the full role prompt text into the delegate_task context field.
+- **Include full specifications in the goal** — subagents start with zero context. The goal + context must be self-contained.
+- **Run Round 2+ reviews in parallel** — Architect and Critic are independent in re-review rounds. Use batch delegate_task to save time.
+- **Summarize feedback with IDs for the Planner** — when looping, label feedback as A1/A2/C1/C2/W1 etc. so the Planner can address each point explicitly and the reviewers can check each one off.
 - Don't let the loop run more than 3 rounds — if no consensus by round 3, output with caveats
 - Each subagent must receive the project context, not just the plan — they need to evaluate against reality
 - The Critic should challenge, not block — if issues are minor, APPROVE with reservations
 - If the goal is ambiguous, stop and suggest `omha-deep-interview` instead of planning with unclear requirements
+- **Use todo tracking** — update a todo list with round/phase status so the user sees progress during what can be a 5-10 minute process
