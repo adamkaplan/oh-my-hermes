@@ -1,7 +1,7 @@
 # LobeHub Skills Reference — Ralph, Deep-Interview, Autopilot
 
 > Extracted April 2026 from LobeHub Skills Marketplace.
-> Purpose: Reference for designing Hermes-native OMHA skill equivalents.
+> Purpose: Reference for designing Hermes-native OMH skill equivalents.
 
 ---
 
@@ -17,7 +17,7 @@
 8. [Skill: Autopilot (dolodorsey/KHG)](#8-autopilot-dolodorseykhg)
 9. [Original Ralph Pattern (Geoffrey Huntley)](#9-original-ralph-pattern-geoffrey-huntley)
 10. [Cross-Cutting Design Patterns](#10-cross-cutting-design-patterns)
-11. [OMHA Design Implications](#11-omha-design-implications)
+11. [OMH Design Implications](#11-omh-design-implications)
 
 ---
 
@@ -587,7 +587,7 @@ All deep-interview implementations share:
 - One question at a time, targeting weakest dimension
 - Brownfield detection pre-fills Context score
 
-**OMHA equivalent needed:** A `clarify` procedure with ambiguity scoring.
+**OMH equivalent needed:** A `clarify` procedure with ambiguity scoring.
 
 ### Pattern 2: External State + Fresh Instances
 
@@ -597,7 +597,7 @@ All ralph implementations share:
 - Git commits provide audit trail and rollback
 - Completion tracked via boolean flags or checkboxes
 
-**OMHA equivalent needed:** State schemas in Hermes conversation state, not files.
+**OMH equivalent needed:** State schemas in Hermes conversation state, not files.
 
 ### Pattern 3: Phase-Gated Pipeline
 
@@ -606,7 +606,7 @@ Autopilot skills use strict phase ordering:
 
 With skip logic (if upstream artifacts exist, skip redundant phases).
 
-**OMHA equivalent needed:** Multi-step procedures with conditional phase skipping.
+**OMH equivalent needed:** Multi-step procedures with conditional phase skipping.
 
 ### Pattern 4: Multi-Perspective Validation
 
@@ -616,7 +616,7 @@ Autopilot spawns parallel reviewer agents:
 - Code reviewer (quality)
 All must approve. Rejection triggers fix + re-validate.
 
-**OMHA equivalent needed:** Parallel tool calls for multi-agent review.
+**OMH equivalent needed:** Parallel tool calls for multi-agent review.
 
 ### Pattern 5: Escalation & Stop Conditions
 
@@ -626,7 +626,7 @@ Consistent across skills:
 - User can cancel with progress preservation
 - Resume from checkpoint
 
-**OMHA equivalent needed:** Error tracking with escalation thresholds.
+**OMH equivalent needed:** Error tracking with escalation thresholds.
 
 ### Pattern 6: Ontology Tracking
 
@@ -635,21 +635,21 @@ Ouroboros ralph and KHG deep-interview track:
 - Stability ratio across rounds
 - Convergence threshold (similarity ≥ 0.95)
 
-**OMHA equivalent needed:** Ontology state in conversation context.
+**OMH equivalent needed:** Ontology state in conversation context.
 
 ---
 
-## 11. OMHA Design Implications
+## 11. OMH Design Implications
 
 ### Skills to Build
 
-| OMC Skill | OMHA Equivalent | Key Adaptation |
+| OMC Skill | OMH Equivalent | Key Adaptation |
 |-----------|----------------|----------------|
-| deep-interview | `omha-clarify` | Ambiguity scoring via Hermes state, not file-based |
-| ralph (Huntley) | `omha-execute-loop` | State in Hermes messages, not prd.json files |
-| ralph (Ouroboros) | `omha-evolve` | Evolutionary convergence with ontology tracking |
-| autopilot | `omha-autopilot` | Phase-gated pipeline with Hermes tool orchestration |
-| cancel | `omha-cancel` | Progress preservation in Hermes state |
+| deep-interview | `omh-clarify` | Ambiguity scoring via Hermes state, not file-based |
+| ralph (Huntley) | `omh-execute-loop` | State in Hermes messages, not prd.json files |
+| ralph (Ouroboros) | `omh-evolve` | Evolutionary convergence with ontology tracking |
+| autopilot | `omh-autopilot` | Phase-gated pipeline with Hermes tool orchestration |
+| cancel | `omh-cancel` | Progress preservation in Hermes state |
 
 ### State Management Shift
 
@@ -658,7 +658,7 @@ OMC skills use filesystem state:
 - `prd.json`, `progress.txt`, `task.md`
 - `autopilot-state.json`, `ralph-state.json`
 
-OMHA should use Hermes conversation state:
+OMH should use Hermes conversation state:
 - Structured state in message metadata
 - Tool results as state transitions
 - Conversation history as audit trail
@@ -673,11 +673,11 @@ OMHA should use Hermes conversation state:
 ### Integration Chain
 
 ```
-omha-clarify (ambiguity → spec)
-  → omha-plan (spec → consensus plan)
-    → omha-autopilot (plan → execution → QA → validation)
-      ↳ omha-execute-loop (inner ralph loop for implementation)
-      ↳ omha-cancel (graceful stop with state preservation)
+omh-clarify (ambiguity → spec)
+  → omh-plan (spec → consensus plan)
+    → omh-autopilot (plan → execution → QA → validation)
+      ↳ omh-execute-loop (inner ralph loop for implementation)
+      ↳ omh-cancel (graceful stop with state preservation)
 ```
 
 ---

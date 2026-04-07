@@ -1,26 +1,26 @@
-# Oh My Hermes Agent (OMHA)
+# Oh My Hermes (OMH)
 
 Multi-agent orchestration skills for [Hermes Agent](https://github.com/NousResearch/hermes-agent). Inspired by [oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode) (OMC) and its ecosystem of community implementations, rebuilt natively for Hermes primitives.
 
 ## What This Is
 
-OMHA brings structured multi-agent workflows to Hermes Agent through composable skills — no code changes, no plugins, no forks. Install individual skills and use them standalone or as a pipeline.
+OMH brings structured multi-agent workflows to Hermes through composable skills — no code changes, no plugins, no forks. Install individual skills and use them standalone or as a pipeline.
 
 | Skill | What It Does | Status |
 |-------|-------------|--------|
-| **omha-ralplan** | Consensus planning: Planner → Architect → Critic debate until agreement | Complete |
-| **omha-deep-interview** | Socratic requirements interview with coverage tracking | Complete |
-| **omha-ralph** | Verified execution: implement → verify → iterate until done | Complete |
-| **omha-autopilot** | Full pipeline composing all three skills end-to-end | Complete |
+| **omh-ralplan** | Consensus planning: Planner → Architect → Critic debate until agreement | Complete |
+| **omh-deep-interview** | Socratic requirements interview with coverage tracking | Complete |
+| **omh-ralph** | Verified execution: implement → verify → iterate until done | Complete |
+| **omh-autopilot** | Full pipeline composing all three skills end-to-end | Complete |
 
 ## Origin Story
 
 OMC solved a real problem: Claude Code's context window degrades over long sessions, and autonomous agents declare victory prematurely. OMC's answer was lifecycle hooks, 29 specialized agents, and mechanical stop-prevention — all tightly coupled to Claude Code's infrastructure.
 
-OMHA takes the best ideas from OMC and its community variants (Ouroboros, Huntley, Agentic Kit, and others published on the LobeHub Skills Marketplace) and rebuilds them for Hermes Agent using only three primitives:
+OMH takes the best ideas from OMC and its community variants (Ouroboros, Huntley, Agentic Kit, and others published on the LobeHub Skills Marketplace) and rebuilds them for Hermes using only three primitives:
 
 - **`delegate_task`** — Isolated subagents with role-specific context (fresh context per agent, no history leakage)
-- **File-based state** — `.omha/` directory for persistence, handoffs, and resumability
+- **File-based state** — `.omh/` directory for persistence, handoffs, and resumability
 - **Skills** — Markdown instructions the agent follows, in the `agentskills.io` open standard
 
 The key architectural insight came during the ralph consensus process: instead of fighting Hermes's lack of a stop-prevention hook, we lean into the "one-task-per-invocation" pattern — each ralph call does one unit of work, updates state, and exits. The caller re-invokes. This is actually more faithful to Geoffrey Huntley's original ralph concept (`while :; do cat PROMPT.md | claude-code; done`) than OMC's in-session loop.
@@ -29,35 +29,35 @@ The key architectural insight came during the ralph consensus process: instead o
 
 ```bash
 # Add the tap (one-time)
-hermes skills tap add witt3rd/omha
+hermes skills tap add witt3rd/oh-my-hermes
 
 # Install individual skills
-hermes skills install omha-ralplan
-hermes skills install omha-deep-interview
-hermes skills install omha-ralph
-hermes skills install omha-autopilot
+hermes skills install omh-ralplan
+hermes skills install omh-deep-interview
+hermes skills install omh-ralph
+hermes skills install omh-autopilot
 ```
 
-Or install manually by copying `skills/<name>/` to `~/.hermes/skills/omha/`.
+Or install manually by copying `skills/<name>/` to `~/.hermes/skills/omh/`.
 
 ## How They Compose
 
 ```
-omha-deep-interview  →  confirmed spec (.omha/specs/)
+omh-deep-interview  →  confirmed spec (.omh/specs/)
         ↓
-omha-ralplan         →  consensus plan (.omha/plans/)
+omh-ralplan         →  consensus plan (.omh/plans/)
         ↓
-omha-autopilot       →  detects existing spec/plan, skips completed phases
+omh-autopilot       →  detects existing spec/plan, skips completed phases
         ↓ (internally uses)
-omha-ralph           →  one-task-per-invocation until verified complete
+omh-ralph           →  one-task-per-invocation until verified complete
 ```
 
 Each skill works standalone. Autopilot composes them into a pipeline but any skill can be used independently:
 
-- **Just need a plan?** → `omha-ralplan`
-- **Vague idea?** → `omha-deep-interview` → `omha-ralplan`
-- **Have a plan, need execution?** → `omha-ralph`
-- **End-to-end?** → `omha-autopilot`
+- **Just need a plan?** → `omh-ralplan`
+- **Vague idea?** → `omh-deep-interview` → `omh-ralplan`
+- **Have a plan, need execution?** → `omh-ralph`
+- **End-to-end?** → `omh-autopilot`
 
 ## Core Concepts
 
@@ -70,7 +70,7 @@ Planner drafts a plan
     → Architect reviews for structural soundness
     → Critic challenges assumptions adversarially
     → If not all APPROVE: Planner revises, loop back (max 3 rounds)
-    → Consensus reached: plan written to .omha/plans/
+    → Consensus reached: plan written to .omh/plans/
 ```
 
 This catches blind spots that a single agent misses. The Critic's job is to break the plan — if it survives, it's stronger for it.
@@ -106,7 +106,7 @@ Key mechanisms:
 - **Planning gate**: Won't execute without a spec or plan with acceptance criteria
 - **Separation of concerns**: Executor writes code, verifier checks evidence (read-only), architect reviews holistically
 - **3-strike circuit breaker**: Same error fingerprint 3 times → stop and surface the fundamental issue
-- **Cancel signal**: `.omha/state/ralph-cancel.json` with 30-second TTL for clean abort
+- **Cancel signal**: `.omh/state/ralph-cancel.json` with 30-second TTL for clean abort
 - **Learnings forward**: Completed task discoveries feed into subsequent executor context
 - **Parallel-first**: Independent tasks batch up to 3 concurrent subagents
 
@@ -115,8 +115,8 @@ Key mechanisms:
 Composes all skills into phases, detecting existing artifacts to skip completed work:
 
 ```
-Phase 0: Requirements  → deep-interview (skip if .omha/specs/ has confirmed spec)
-Phase 1: Planning      → ralplan consensus (skip if .omha/plans/ has approved plan)
+Phase 0: Requirements  → deep-interview (skip if .omh/specs/ has confirmed spec)
+Phase 1: Planning      → ralplan consensus (skip if .omh/plans/ has approved plan)
 Phase 2: Execution     → ralph persistence loop
 Phase 3: QA            → build + test cycling
 Phase 4: Validation    → parallel review (architect + security + code reviewer)
@@ -125,14 +125,14 @@ Phase 5: Cleanup       → delete state files, report summary
 
 ## Key Adaptations from OMC
 
-| OMC Pattern | OMHA Adaptation | Why |
+| OMC Pattern | OMH Adaptation | Why |
 |---|---|---|
 | `spawn_agent` with role prompts | `delegate_task` with role text in context field | Hermes subagents receive goal + context, not separate system prompts |
 | `persistent-mode.cjs` (mechanical stop prevention) | One-task-per-invocation + state files | Hermes has no stop hook; state-based resumability is more robust than prompt-based persistence |
 | 6 concurrent child agents | 3 concurrent (Hermes `MAX_CONCURRENT_CHILDREN`) | Batch into groups of 3; Phase 4 validation fits exactly |
 | Float ambiguity scores (0.0-1.0) with auto-exit gate | Coarse bins (HIGH/MEDIUM/LOW/CLEAR) with user-confirmed exit | LLM self-assessment lacks the precision to justify decimal thresholds |
 | PRD user stories (`prd.json`) | Task items from ralplan consensus plans | Equivalent structure, different source |
-| `.omc/` state directory | `.omha/` state directory | Same convention, different namespace |
+| `.omc/` state directory | `.omh/` state directory | Same convention, different namespace |
 | Haiku/Sonnet/Opus tier routing | Default model with per-subagent override | Hermes delegate_task supports model param but doesn't auto-route |
 | Challenge modes (Contrarian/Simplifier/Ontologist) | Single adaptive instruction | Same effect, less ceremony |
 | `AskUserQuestion` (clickable UI) | Conversational questions | Hermes is platform-agnostic (CLI, Telegram, etc.) |
@@ -156,10 +156,10 @@ Eight shared role prompts give subagents precise behavioral instructions:
 
 ## State Convention
 
-All state lives in `.omha/` within the project directory:
+All state lives in `.omh/` within the project directory:
 
 ```
-.omha/
+.omh/
 ├── state/                              # Active mode state (JSON)
 │   ├── interview-{id}.json             # Active deep-interview session
 │   ├── ralph-state.json                # Active ralph session
@@ -181,12 +181,12 @@ State files are deleted on successful completion. Specs and plans persist as art
 
 ## Methodology: Self-Bootstrapping
 
-OMHA was built using its own tools. The first skill implemented was `omha-ralplan` (consensus planning), which was then used to design the remaining skills through multi-agent debate:
+OMH was built using its own tools. The first skill implemented was `omh-ralplan` (consensus planning), which was then used to design the remaining skills through multi-agent debate:
 
-1. **omha-deep-interview** — Designed via ralplan consensus (2 rounds: Planner drafted, Critic challenged scoring-as-exit-gate and undefined spec contract, Planner revised, both approved)
-2. **omha-ralph** — Designed via ralplan consensus with OMC source + LobeHub references fed to all subagents (2 rounds: both reviewers demanded cancel mechanism, context strategy, and verifier separation; Critic proposed one-task-per-invocation architecture; Planner adopted it; both approved)
+1. **omh-deep-interview** — Designed via ralplan consensus (2 rounds: Planner drafted, Critic challenged scoring-as-exit-gate and undefined spec contract, Planner revised, both approved)
+2. **omh-ralph** — Designed via ralplan consensus with OMC source + LobeHub references fed to all subagents (2 rounds: both reviewers demanded cancel mechanism, context strategy, and verifier separation; Critic proposed one-task-per-invocation architecture; Planner adopted it; both approved)
 
-Each consensus process produced a plan that was then reviewed against the actual OMC source code and LobeHub marketplace implementations, ensuring OMHA preserves the patterns that matter while adapting to Hermes's architecture.
+Each consensus process produced a plan that was then reviewed against the actual OMC source code and LobeHub marketplace implementations, ensuring OMH preserves the patterns that matter while adapting to Hermes's architecture.
 
 ## Reference Material
 
@@ -194,7 +194,7 @@ The `docs/` directory contains analysis of the source implementations:
 
 | Document | Contents |
 |----------|----------|
-| `docs/architecture.md` | OMHA composition model, primitives, constraints |
+| `docs/architecture.md` | OMH composition model, primitives, constraints |
 | `docs/omc-ralph-reference.md` | Extracted from actual OMC source: ralph, ultrawork, autopilot, persistent-mode.cjs, agent prompts, 12 design patterns |
 | `docs/lobehub-skills-reference.md` | 3 ralph variants, 2 deep-interview implementations, 2 autopilot implementations from the LobeHub marketplace |
 
@@ -205,7 +205,7 @@ The `docs/` directory contains analysis of the source implementations:
 
 ## Hermes Constraints
 
-| Constraint | Impact | How OMHA Handles It |
+| Constraint | Impact | How OMH Handles It |
 |---|---|---|
 | 3 concurrent subagents | Can't fire 6 parallel agents like OMC | Batch into groups of 3; validation phase fits exactly |
 | No recursive delegation | Subagents can't spawn subagents | All orchestration at top level; subagents are leaf workers |
@@ -215,11 +215,11 @@ The `docs/` directory contains analysis of the source implementations:
 
 ## What's Missing (Honest Gaps)
 
-OMHA v1.0 replicates the core execution pipeline (~85%) but not the full OMC feature surface (~60% overall). Here's what we don't do.
+OMH v1.0 replicates the core execution pipeline (~85%) but not the full OMC feature surface (~60% overall). Here's what we don't do.
 
 ### Can't Do With Skills Alone
 
-These require Hermes Agent code changes or plugins:
+These require Hermes code changes or plugins:
 
 | Gap | What OMC Has | Why We Can't | Path Forward |
 |-----|-------------|-------------|--------------|
@@ -245,7 +245,7 @@ These require Hermes Agent code changes or plugins:
 
 These aren't gaps — they're choices made during consensus review:
 
-| OMC Does | OMHA Does | Why |
+| OMC Does | OMH Does | Why |
 |----------|-----------|-----|
 | Float ambiguity scores (0.0-1.0) with auto-exit | Coarse bins (HIGH/MEDIUM/LOW/CLEAR), user-confirmed exit | LLM self-assessment lacks decimal precision. The user is the authority on readiness. |
 | In-session persistence loop | One-task-per-invocation + state files | Hermes can't prevent exit mechanically. State-based resume is more robust and eliminates context exhaustion. |
@@ -255,10 +255,10 @@ These aren't gaps — they're choices made during consensus review:
 
 ## Distribution
 
-OMHA is distributed as a GitHub tap for the Hermes Skills Hub:
+OMH is distributed as a GitHub tap for the Hermes Skills Hub:
 
 ```
-Phase 1 (current): GitHub tap — witt3rd/omha
+Phase 1 (current): GitHub tap — witt3rd/oh-my-hermes
 Phase 2 (planned): PR to NousResearch/hermes-agent optional-skills/
 Phase 3 (if needed): pip plugin for mechanical persistence hooks
 ```

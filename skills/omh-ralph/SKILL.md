@@ -1,5 +1,5 @@
 ---
-name: omha-ralph
+name: omh-ralph
 description: >
   Verified execution loop: picks the next task from a plan, delegates to an executor
   subagent, verifies completion with fresh evidence, and updates state. One task per
@@ -7,34 +7,34 @@ description: >
   every change must be verified through builds, tests, and independent review.
 version: 1.0.0
 tags: [execution, verification, persistence, iron-law, loop]
-category: omha
+category: omh
 metadata:
   hermes:
     requires_toolsets: [terminal]
 ---
 
-# OMHA Ralph — Verified Execution
+# OMH Ralph — Verified Execution
 
 ## When to Use
 
-- You have a plan (from omha-ralplan or manual) and need verified execution
+- You have a plan (from omh-ralplan or manual) and need verified execution
 - The user says: "ralph", "don't stop", "until done", "must complete", "keep going"
 - You need guaranteed verification — not just "looks done" but evidence-backed completion
 - Multi-step implementation where each task must be independently verified
 
 ## When NOT to Use
 
-- No plan or spec exists (use omha-deep-interview and/or omha-ralplan first)
+- No plan or spec exists (use omh-deep-interview and/or omh-ralplan first)
 - Trivial single-file changes (just do them directly)
 - The user explicitly wants to skip verification
 
 ## Prerequisites
 
 - A plan with tasks and acceptance criteria. Sources (checked in order):
-  1. `.omha/state/ralph-tasks.json` (already parsed — resume)
-  2. `.omha/plans/ralplan-*.md` or `.omha/plans/consensus-*.md` (ralplan output)
-  3. `.omha/plans/ralph-plan.md` (manually provided)
-- If no plan exists: refuse to start, tell the user to run omha-ralplan first
+  1. `.omh/state/ralph-tasks.json` (already parsed — resume)
+  2. `.omh/plans/ralplan-*.md` or `.omh/plans/consensus-*.md` (ralplan output)
+  3. `.omh/plans/ralph-plan.md` (manually provided)
+- If no plan exists: refuse to start, tell the user to run omh-ralplan first
   - **Simple mode fallback**: if the user provides inline tasks, parse them into ralph-tasks.json
 
 ## Architecture: One Task Per Invocation
@@ -54,14 +54,14 @@ Final invocation: all tasks pass → architect review → mark complete → EXIT
 
 ### Step 1: Read State
 
-1. Check for `.omha/state/ralph-state.json`
+1. Check for `.omh/state/ralph-state.json`
    - **Not found**: This is a fresh start. Go to Step 2 (Planning Gate).
    - **Found, `active=true`**: Normal operation. Go to Step 3.
    - **Found, `active=false`, `phase="complete"`**: Report completion. Ask if user wants a fresh start.
    - **Found, `active=false`, `phase="blocked"`**: Report what's blocked and why. Ask if issues are resolved.
-   - **Found, `active=false`, `phase="cancelled"`**: Report cancellation. Check if `.omha/state/ralph-cancel.json` still exists — if removed, offer to resume.
+   - **Found, `active=false`, `phase="cancelled"`**: Report cancellation. Check if `.omh/state/ralph-cancel.json` still exists — if removed, offer to resume.
 
-2. Check for cancel signal: `.omha/state/ralph-cancel.json`
+2. Check for cancel signal: `.omh/state/ralph-cancel.json`
    - If present and within 30-second TTL: set `phase="cancelled"`, preserve state, exit.
    - If present but stale (>30s): delete it, continue.
 
@@ -74,10 +74,10 @@ Final invocation: all tasks pass → architect review → mark complete → EXIT
 
 Ralph MUST NOT execute without a plan. Check sources in order:
 
-1. `.omha/state/ralph-tasks.json` — already parsed, skip to Step 3
-2. `.omha/plans/ralplan-*.md` — parse into ralph-tasks.json
-3. `.omha/plans/ralph-plan.md` — parse into ralph-tasks.json
-4. Nothing found → tell user: "No plan found. Run `omha-ralplan` first, or provide tasks inline."
+1. `.omh/state/ralph-tasks.json` — already parsed, skip to Step 3
+2. `.omh/plans/ralplan-*.md` — parse into ralph-tasks.json
+3. `.omh/plans/ralph-plan.md` — parse into ralph-tasks.json
+4. Nothing found → tell user: "No plan found. Run `omh-ralplan` first, or provide tasks inline."
 
 **Plan parsing rules:**
 - Extract numbered tasks with titles, descriptions, and acceptance criteria
@@ -91,7 +91,7 @@ Create `ralph-state.json` with a fresh `session_id` (UUID) and `iteration: 0`.
 
 ### Step 3: Pick Next Task
 
-Read `.omha/state/ralph-tasks.json`.
+Read `.omh/state/ralph-tasks.json`.
 
 1. If ALL tasks have `passes: true` → go to Step 7 (Final Review)
 2. Find eligible tasks: `passes=false` AND all dependencies met (dependent tasks have `passes=true`)
@@ -114,7 +114,7 @@ delegate_task(
 )
 ```
 
-Load the executor role prompt from `omha-ralplan/references/role-executor.md`. Pass the FULL prompt text inlined in the delegate_task call — subagents can't load skill files.
+Load the executor role prompt from `omh-ralplan/references/role-executor.md`. Pass the FULL prompt text inlined in the delegate_task call — subagents can't load skill files.
 
 The executor prompt instructs self-verification before reporting COMPLETE:
 - Run any inline tests it can
@@ -151,14 +151,14 @@ delegate_task(
 )
 ```
 
-Load the verifier role prompt from `omha-ralplan/references/role-verifier.md`.
+Load the verifier role prompt from `omh-ralplan/references/role-verifier.md`.
 
 Parse the verifier's response:
 - **APPROVE / PASS**: Set `task.passes = true`. Record learnings in `completed_task_learnings`:
   ```json
   {"task_id": "T-001", "summary": "what was done", "files_changed": [...], "gotchas": "..."}
   ```
-  Append completion entry to `.omha/logs/ralph-progress.md`.
+  Append completion entry to `.omh/logs/ralph-progress.md`.
 - **REQUEST_CHANGES / FAIL**: Record `verifier_verdict` on the task. Record error fingerprint. Check 3-strike rule (Step 6). The task will be retried on the next invocation with the verifier's feedback passed to the executor.
 
 ### Step 6: Error Handling
@@ -182,7 +182,7 @@ If yes (3-strike triggered):
 **Cancel Detection**
 
 If the user says "stop", "cancel", or "abort" during this invocation:
-1. Write `.omha/state/ralph-cancel.json` with `requested_by: "user"`
+1. Write `.omh/state/ralph-cancel.json` with `requested_by: "user"`
 2. Set `phase="cancelled"` in ralph-state.json
 3. Preserve all state for resume
 4. Report: "Ralph cancelled at iteration {N}, task {id}. State preserved. Delete ralph-cancel.json and re-invoke to resume."
@@ -200,7 +200,7 @@ delegate_task(
 )
 ```
 
-Load the architect role prompt from `omha-ralplan/references/role-architect.md`.
+Load the architect role prompt from `omh-ralplan/references/role-architect.md`.
 
 The architect is READ-ONLY — it analyzes, it doesn't fix.
 
@@ -231,9 +231,9 @@ Key rules:
 ## Sentinel Convention
 
 Other skills detect ralph status by checking:
-- `.omha/state/ralph-state.json` exists with `active: true` → ralph is in progress
-- `.omha/state/ralph-state.json` exists with `phase: "complete"` → ralph finished successfully
-- `.omha/logs/ralph-progress.md` exists → ralph has run (check content for outcome)
+- `.omh/state/ralph-state.json` exists with `active: true` → ralph is in progress
+- `.omh/state/ralph-state.json` exists with `phase: "complete"` → ralph finished successfully
+- `.omh/logs/ralph-progress.md` exists → ralph has run (check content for outcome)
 
 ## Pitfalls
 

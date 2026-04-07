@@ -1,8 +1,8 @@
-# OMHA Autopilot — Implementation Plan
+# OMH Autopilot — Implementation Plan
 
 ## Summary
 
-omha-autopilot is a **composition skill** that orchestrates the existing omha-deep-interview, omha-ralplan, and omha-ralph skills into a 6-phase autonomous pipeline (Requirements → Planning → Execution → QA → Validation → Cleanup). It does not reimplement any component skill — it detects existing artifacts (.omha/specs/, .omha/plans/, .omha/state/) to skip completed phases, manages its own autopilot-state.json for resume, and adds two phases that don't exist in the components: QA cycling (Phase 3) and multi-reviewer validation (Phase 4). The central design challenge is the ralph loop: ralph is one-task-per-invocation, so autopilot must contain an explicit loop that re-invokes ralph (via skill_view + following ralph's procedure) until ralph-state.json shows phase=complete. This is a prompt-driven loop within a single Hermes session — the agent reads the autopilot skill, which instructs it to keep re-invoking ralph steps until done.
+omh-autopilot is a **composition skill** that orchestrates the existing omh-deep-interview, omh-ralplan, and omh-ralph skills into a 6-phase autonomous pipeline (Requirements → Planning → Execution → QA → Validation → Cleanup). It does not reimplement any component skill — it detects existing artifacts (.omh/specs/, .omh/plans/, .omh/state/) to skip completed phases, manages its own autopilot-state.json for resume, and adds two phases that don't exist in the components: QA cycling (Phase 3) and multi-reviewer validation (Phase 4). The central design challenge is the ralph loop: ralph is one-task-per-invocation, so autopilot must contain an explicit loop that re-invokes ralph (via skill_view + following ralph's procedure) until ralph-state.json shows phase=complete. This is a prompt-driven loop within a single Hermes session — the agent reads the autopilot skill, which instructs it to keep re-invoking ralph steps until done.
 
 ---
 
@@ -10,14 +10,14 @@ omha-autopilot is a **composition skill** that orchestrates the existing omha-de
 
 ### Task 1: Define autopilot-state.json Schema
 
-**Description**: Design the state file schema for `.omha/state/autopilot-state.json`. Must track: current phase (0-5), phase results (spec_file, plan_file, ralph completion status), QA cycle count, validation verdicts, session_id, timestamps. Model after OMC's autopilot state but adapted to OMHA's file-based patterns.
+**Description**: Design the state file schema for `.omh/state/autopilot-state.json`. Must track: current phase (0-5), phase results (spec_file, plan_file, ralph completion status), QA cycle count, validation verdicts, session_id, timestamps. Model after OMC's autopilot state but adapted to OMH's file-based patterns.
 
 **Dependencies**: None
 
 **Complexity**: Low
 
 **Acceptance Criteria**:
-- Schema documented in `omha-autopilot/references/state-schema.md`
+- Schema documented in `omh-autopilot/references/state-schema.md`
 - Fields cover all 6 phases with enough state for resume from any phase boundary
 - Includes `session_id`, `started_at`, `last_updated_at`, `phase` (requirements/planning/execution/qa/validation/cleanup/complete/blocked)
 - QA tracking: `qa_cycle`, `max_qa_cycles` (default 5), `qa_error_history[]`
@@ -28,7 +28,7 @@ omha-autopilot is a **composition skill** that orchestrates the existing omha-de
 
 ### Task 2: Implement Phase 0 — Requirements (Deep Interview Detection/Invocation)
 
-**Description**: Write the Phase 0 section of SKILL.md. On invocation, check for existing confirmed specs in `.omha/specs/*-spec.md` (YAML frontmatter `status: confirmed`). If found, skip Phase 0 entirely and record spec_file in state. If not found AND the user's input is vague (no file paths, function names, or concrete anchors), instruct the agent to follow the omha-deep-interview procedure. If the user's input is concrete enough, generate a lightweight spec inline (analyst + summarizer pattern).
+**Description**: Write the Phase 0 section of SKILL.md. On invocation, check for existing confirmed specs in `.omh/specs/*-spec.md` (YAML frontmatter `status: confirmed`). If found, skip Phase 0 entirely and record spec_file in state. If not found AND the user's input is vague (no file paths, function names, or concrete anchors), instruct the agent to follow the omh-deep-interview procedure. If the user's input is concrete enough, generate a lightweight spec inline (analyst + summarizer pattern).
 
 **Dependencies**: Task 1 (state schema)
 
@@ -37,8 +37,8 @@ omha-autopilot is a **composition skill** that orchestrates the existing omha-de
 **Acceptance Criteria**:
 - Detects existing confirmed specs via glob + YAML frontmatter check
 - Vagueness heuristic documented (what counts as "vague" vs "concrete")
-- For vague input: instructs agent to load omha-deep-interview skill and follow it, then return to autopilot when spec is confirmed
-- For concrete input: generates an inline spec at `.omha/specs/{slug}-spec.md` with status: confirmed
+- For vague input: instructs agent to load omh-deep-interview skill and follow it, then return to autopilot when spec is confirmed
+- For concrete input: generates an inline spec at `.omh/specs/{slug}-spec.md` with status: confirmed
 - State updated with spec_file path on completion
 - Skips cleanly when spec already exists (no redundant work)
 
@@ -46,14 +46,14 @@ omha-autopilot is a **composition skill** that orchestrates the existing omha-de
 
 ### Task 3: Implement Phase 1 — Planning (Ralplan Detection/Invocation)
 
-**Description**: Write Phase 1. Check for existing consensus plans in `.omha/plans/ralplan-*.md`. If found, skip Phase 1 and record plan_file in state. If not found, instruct the agent to load omha-ralplan skill and follow it using the spec from Phase 0 as input. The ralplan spec output becomes the plan_file.
+**Description**: Write Phase 1. Check for existing consensus plans in `.omh/plans/ralplan-*.md`. If found, skip Phase 1 and record plan_file in state. If not found, instruct the agent to load omh-ralplan skill and follow it using the spec from Phase 0 as input. The ralplan spec output becomes the plan_file.
 
 **Dependencies**: Task 1, Task 2
 
 **Complexity**: Low
 
 **Acceptance Criteria**:
-- Detects existing ralplan output via glob `.omha/plans/ralplan-*.md`
+- Detects existing ralplan output via glob `.omh/plans/ralplan-*.md`
 - When invoking ralplan: passes the spec file path as the goal source
 - State updated with plan_file path on completion
 - Skips cleanly when plan already exists
@@ -62,7 +62,7 @@ omha-autopilot is a **composition skill** that orchestrates the existing omha-de
 
 ### Task 4: Implement Phase 2 — Execution (Ralph Loop)
 
-**Description**: Write Phase 2 — the critical ralph orchestration loop. Autopilot instructs the agent to load omha-ralph skill and follow its procedure. After ralph exits (one task completed), autopilot checks `.omha/state/ralph-state.json`. If `phase != "complete"` and `active == true`, re-invoke ralph (follow its procedure again from Step 1: Read State). Continue until ralph-state.json shows `phase: "complete"` or `phase: "blocked"`. This is the key composition — autopilot is the outer loop, ralph is the inner single-task executor.
+**Description**: Write Phase 2 — the critical ralph orchestration loop. Autopilot instructs the agent to load omh-ralph skill and follow its procedure. After ralph exits (one task completed), autopilot checks `.omh/state/ralph-state.json`. If `phase != "complete"` and `active == true`, re-invoke ralph (follow its procedure again from Step 1: Read State). Continue until ralph-state.json shows `phase: "complete"` or `phase: "blocked"`. This is the key composition — autopilot is the outer loop, ralph is the inner single-task executor.
 
 **Dependencies**: Task 1, Task 3
 
@@ -108,7 +108,7 @@ omha-autopilot is a **composition skill** that orchestrates the existing omha-de
 **Acceptance Criteria**:
 - Three parallel delegate_task calls (Hermes limit: 3 concurrent subagents — fits exactly)
 - Each reviewer receives: the original spec, the plan, list of files changed, fresh build/test output
-- Role prompts loaded from `omha-ralplan/references/` (architect) and new role prompts for security and code reviewer
+- Role prompts loaded from `omh-ralplan/references/` (architect) and new role prompts for security and code reviewer
 - Verdicts: APPROVE or REQUEST_CHANGES with specific issues
 - On any REQUEST_CHANGES: fix via executor, re-run all three reviews (full re-validation, not just the rejecting reviewer)
 - Max 3 rounds tracked in `validation_round` state field
@@ -118,7 +118,7 @@ omha-autopilot is a **composition skill** that orchestrates the existing omha-de
 
 ### Task 7: Implement Phase 5 — Cleanup and Reporting
 
-**Description**: Write Phase 5 — cleanup state files and produce a completion summary. Delete `.omha/state/autopilot-state.json`, `ralph-state.json`, `ralph-tasks.json`, `ralph-cancel.json`, `ralplan-state.json`. Preserve `.omha/logs/` and `.omha/plans/` and `.omha/specs/` (audit trail). Report: what was built, files changed, phases completed, any caveats.
+**Description**: Write Phase 5 — cleanup state files and produce a completion summary. Delete `.omh/state/autopilot-state.json`, `ralph-state.json`, `ralph-tasks.json`, `ralph-cancel.json`, `ralplan-state.json`. Preserve `.omh/logs/` and `.omh/plans/` and `.omh/specs/` (audit trail). Report: what was built, files changed, phases completed, any caveats.
 
 **Dependencies**: Task 1, Task 6
 
@@ -134,15 +134,15 @@ omha-autopilot is a **composition skill** that orchestrates the existing omha-de
 
 ### Task 8: Write Role Prompts for Security and Code Reviewer
 
-**Description**: Create role prompt files for the two reviewer roles that are new to OMHA (not in ralplan's existing references): security-reviewer and code-reviewer. These are Phase 4 subagents. Follow the same format as `omha-ralplan/references/role-architect.md`.
+**Description**: Create role prompt files for the two reviewer roles that are new to OMH (not in ralplan's existing references): security-reviewer and code-reviewer. These are Phase 4 subagents. Follow the same format as `omh-ralplan/references/role-architect.md`.
 
 **Dependencies**: None (parallel with other tasks)
 
 **Complexity**: Low
 
 **Acceptance Criteria**:
-- `omha-autopilot/references/role-security-reviewer.md` — responsibilities, protocol, output format (APPROVE/REQUEST_CHANGES with issue list)
-- `omha-autopilot/references/role-code-reviewer.md` — same structure
+- `omh-autopilot/references/role-security-reviewer.md` — responsibilities, protocol, output format (APPROVE/REQUEST_CHANGES with issue list)
+- `omh-autopilot/references/role-code-reviewer.md` — same structure
 - Both are READ-ONLY (analyze and report, don't fix)
 - Output format matches what Phase 4 expects to parse
 
@@ -150,7 +150,7 @@ omha-autopilot is a **composition skill** that orchestrates the existing omha-de
 
 ### Task 9: Write Smart Phase Detection Logic
 
-**Description**: Implement the artifact detection that makes autopilot resume-aware. On any invocation, check: (1) autopilot-state.json for active session → resume from last phase; (2) .omha/specs/ for confirmed spec → skip Phase 0; (3) .omha/plans/ralplan-*.md for consensus plan → skip Phase 0+1; (4) ralph-state.json with phase=complete → skip Phase 2. Document the priority order of these checks.
+**Description**: Implement the artifact detection that makes autopilot resume-aware. On any invocation, check: (1) autopilot-state.json for active session → resume from last phase; (2) .omh/specs/ for confirmed spec → skip Phase 0; (3) .omh/plans/ralplan-*.md for consensus plan → skip Phase 0+1; (4) ralph-state.json with phase=complete → skip Phase 2. Document the priority order of these checks.
 
 **Dependencies**: Task 1
 
@@ -160,14 +160,14 @@ omha-autopilot is a **composition skill** that orchestrates the existing omha-de
 - Detection logic documented as a decision tree in SKILL.md Phase 0 preamble
 - Priority: active autopilot state (resume) > existing artifacts (skip phases) > fresh start
 - Stale state detection: autopilot-state.json older than 2 hours triggers warning
-- Each skip is logged: "Skipping Phase 0: confirmed spec found at .omha/specs/foo-spec.md"
+- Each skip is logged: "Skipping Phase 0: confirmed spec found at .omh/specs/foo-spec.md"
 - The agent knows exactly which phase to start from after detection
 
 ---
 
 ### Task 10: Write the Complete SKILL.md
 
-**Description**: Assemble all phases, detection logic, state management, and pitfalls into the final `omha-autopilot/SKILL.md`. Follow the same structure as omha-ralph and omha-deep-interview: frontmatter, When to Use, When NOT to Use, Prerequisites, Procedure (phases), State Management, Sentinel Convention, Pitfalls.
+**Description**: Assemble all phases, detection logic, state management, and pitfalls into the final `omh-autopilot/SKILL.md`. Follow the same structure as omh-ralph and omh-deep-interview: frontmatter, When to Use, When NOT to Use, Prerequisites, Procedure (phases), State Management, Sentinel Convention, Pitfalls.
 
 **Dependencies**: Tasks 1-9
 
@@ -193,7 +193,7 @@ omha-autopilot is a **composition skill** that orchestrates the existing omha-de
 
 **Acceptance Criteria**:
 - Complete run from idea to verified code on a test project
-- Each phase produces expected artifacts (.omha/specs/, .omha/plans/, .omha/state/)
+- Each phase produces expected artifacts (.omh/specs/, .omh/plans/, .omh/state/)
 - Phase detection works: re-invoking autopilot after Phase 1 skips to Phase 2
 - Ralph loop runs multiple iterations and completes
 - QA phase catches at least one issue (or passes clean)
@@ -255,9 +255,9 @@ Allows the user to review the plan before execution starts. OMC has this.
 **Recommendation**: Yes — useful safety valve. When set, autopilot completes Phase 1, reports the plan, and exits. Re-invocation detects the plan and proceeds to Phase 2.
 
 ### Q5: Where do the security-reviewer and code-reviewer role prompts live?
-Options: (a) in omha-autopilot/references/, (b) in omha-ralplan/references/ alongside the existing roles.
+Options: (a) in omh-autopilot/references/, (b) in omh-ralplan/references/ alongside the existing roles.
 
-**Recommendation**: In omha-autopilot/references/ — they're specific to autopilot's validation phase. Ralplan doesn't use them. Keep role prompts close to the skill that uses them.
+**Recommendation**: In omh-autopilot/references/ — they're specific to autopilot's validation phase. Ralplan doesn't use them. Keep role prompts close to the skill that uses them.
 
 ### Q6: What happens if the user runs autopilot on a project with an active ralph session from a manual ralph invocation?
 Ralph-state.json would exist with active=true from a previous manual ralph run.

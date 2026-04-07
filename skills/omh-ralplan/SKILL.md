@@ -1,18 +1,18 @@
 ---
-name: omha-ralplan
+name: omh-ralplan
 description: >
   Consensus planning via multi-agent debate. Three perspectives (Planner, Architect, Critic)
   iterate until consensus or max rounds. Produces a vetted implementation plan. Use for any
   non-trivial task where a single perspective might miss blind spots.
 version: 0.1.0
 tags: [planning, multi-agent, consensus, architecture]
-category: omha
+category: omh
 metadata:
   hermes:
     requires_toolsets: [terminal]
 ---
 
-# OMHA Ralplan — Consensus Planning
+# OMH Ralplan — Consensus Planning
 
 ## When to Use
 
@@ -29,7 +29,7 @@ metadata:
 
 ## Prerequisites
 
-- A clear goal or specification (if ambiguous, use `omha-deep-interview` first)
+- A clear goal or specification (if ambiguous, use `omh-deep-interview` first)
 - The `delegate_task` tool must be available
 
 ## Procedure
@@ -95,7 +95,7 @@ This saves significant time (Round 2 re-reviews ran 14 seconds parallel vs ~120 
 
 ### Phase 2: Output
 
-Write the consensus plan to `.omha/plans/ralplan-{slug}.md` containing:
+Write the consensus plan to `.omh/plans/ralplan-{slug}.md` containing:
 1. Consensus status (rounds, verdicts per round)
 2. Revision summary (what changed from feedback)
 3. The final plan (tasks with dependencies, complexity, acceptance criteria)
@@ -108,14 +108,14 @@ Also write a summary to the user with the key design decisions that emerged from
 
 ## State Management
 
-State is tracked in `.omha/state/ralplan-state.json`:
+State is tracked in `.omh/state/ralplan-state.json`:
 ```json
 {
   "goal": "...",
   "round": 1,
   "phase": "planner|architect|critic|complete",
   "consensus": false,
-  "plan_file": ".omha/plans/ralplan-{slug}.md"
+  "plan_file": ".omh/plans/ralplan-{slug}.md"
 }
 ```
 
@@ -134,7 +134,7 @@ When the user requests deliberate mode or uses "deliberate", "ADR", or "decision
 - Don't let the loop run more than 3 rounds — if no consensus by round 3, output with caveats
 - Each subagent must receive the project context, not just the plan — they need to evaluate against reality
 - The Critic should challenge, not block — if issues are minor, APPROVE with reservations
-- If the goal is ambiguous, stop and suggest `omha-deep-interview` instead of planning with unclear requirements
+- If the goal is ambiguous, stop and suggest `omh-deep-interview` instead of planning with unclear requirements
 - **Use todo tracking** — update a todo list with round/phase status so the user sees progress during what can be a 5-10 minute process
 - **When porting/adapting from a reference system, feed actual source to subagents** — if designing a skill inspired by another system (e.g., OMC → Hermes), the Planner, Architect, and Critic must read the actual source implementation, not just briefs or summaries. Extract reference docs from the source repo first, pass file paths in the delegate_task goal so subagents read them. Summaries lose critical field names, state schemas, edge cases, and design patterns.
 - **The Critic's simplicity test can change architecture** — don't dismiss it. In the ralph consensus, the Critic proposed one-task-per-invocation (instead of an in-session loop) which both reviewers then approved as fundamentally better. The consensus process finds the right architecture, not just validates the proposed one.

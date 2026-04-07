@@ -1,11 +1,11 @@
-# OMHA State Schema
+# OMH State Schema
 
-All OMHA skills write state to `.omha/` in the project directory. This enables resumability across context resets and session interruptions.
+All OMH skills write state to `.omh/` in the project directory. This enables resumability across context resets and session interruptions.
 
 ## Directory Structure
 
 ```
-.omha/
+.omh/
 ├── state/
 │   ├── ralplan-state.json      # Active ralplan session
 │   ├── ralph-state.json        # Active ralph loop

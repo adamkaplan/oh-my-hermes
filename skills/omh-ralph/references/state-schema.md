@@ -3,7 +3,7 @@
 ## File Layout
 
 ```
-.omha/
+.omh/
 ├── state/
 │   ├── ralph-state.json        # Loop state (deleted on completion)
 │   ├── ralph-tasks.json        # Task list with acceptance criteria (deleted on completion)
@@ -55,7 +55,7 @@
 
 ```json
 {
-  "source_plan": ".omha/plans/ralplan-consensus-my-project.md",
+  "source_plan": ".omh/plans/ralplan-consensus-my-project.md",
   "tasks": [
     {
       "id": "T-001",

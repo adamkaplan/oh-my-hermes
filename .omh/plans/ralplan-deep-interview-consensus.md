@@ -1,4 +1,4 @@
-# omha-deep-interview — Consensus Plan
+# omh-deep-interview — Consensus Plan
 
 ## Consensus Status
 - **Round 1**: Planner drafted, Architect APPROVED with 5 concerns, Critic REQUEST_CHANGES (3 critical, 5 warnings)
@@ -31,7 +31,7 @@ Build a Socratic interview skill that elicits project requirements through struc
 ## Tasks
 
 ### T1: Define Spec Schema (Consumer-First)
-**Description**: Examine what ralplan and autopilot actually consume. Ralplan's Planner subagent receives the spec as context text. Autopilot checks .omha/specs/ for existence and reads the file. Define the spec schema BACKWARDS from these consumers. Must include YAML frontmatter with version, status, created timestamp, and interview-id.
+**Description**: Examine what ralplan and autopilot actually consume. Ralplan's Planner subagent receives the spec as context text. Autopilot checks .omh/specs/ for existence and reads the file. Define the spec schema BACKWARDS from these consumers. Must include YAML frontmatter with version, status, created timestamp, and interview-id.
 
 **Dependencies**: None
 **Complexity**: Medium
@@ -44,7 +44,7 @@ Build a Socratic interview skill that elicits project requirements through struc
 - Schema includes a "confirmation" field (user must confirm before final)
 
 ### T2: Define State Schema
-**Description**: Design the interview state file stored at .omha/state/interview-{id}.json. Stores round summaries (not full transcripts) to keep state compact and resumable. Include dimension coverage bins, round count, and user decisions.
+**Description**: Design the interview state file stored at .omh/state/interview-{id}.json. Stores round summaries (not full transcripts) to keep state compact and resumable. Include dimension coverage bins, round count, and user decisions.
 
 **Dependencies**: T1 (state must reference spec schema fields)
 **Complexity**: Small
@@ -106,7 +106,7 @@ This is a prompt instruction, not a code branch. It goes into the interview loop
 - No separate "challenge mode" concept
 
 ### T6: Implement Spec Generation
-**Description**: When user confirms exit, generate the spec from accumulated round summaries. Spec follows the schema from T1. Write to .omha/specs/{project-name}-spec.md. Status is "draft".
+**Description**: When user confirms exit, generate the spec from accumulated round summaries. Spec follows the schema from T1. Write to .omh/specs/{project-name}-spec.md. Status is "draft".
 
 **Dependencies**: T1, T4
 **Complexity**: Medium
@@ -114,7 +114,7 @@ This is a prompt instruction, not a code branch. It goes into the interview loop
 - Spec generated from state round summaries
 - Follows T1 schema exactly
 - YAML frontmatter populated correctly
-- Written to .omha/specs/
+- Written to .omh/specs/
 - Open Questions section populated with any dimension still at HIGH or MEDIUM
 
 ### T7: Implement Spec Confirmation Step
@@ -131,7 +131,7 @@ This is a prompt instruction, not a code branch. It goes into the interview loop
 - Only "confirmed" specs are considered valid by downstream consumers
 
 ### T8: Implement Logging
-**Description**: Add structured logging to .omha/logs/interview-{id}.log. Log: round transitions, dimension coverage changes, user decisions (continue/exit/confirm/abandon), errors. NOT full transcripts — just events and decisions.
+**Description**: Add structured logging to .omh/logs/interview-{id}.log. Log: round transitions, dimension coverage changes, user decisions (continue/exit/confirm/abandon), errors. NOT full transcripts — just events and decisions.
 
 **Dependencies**: T4
 **Complexity**: Small
@@ -155,12 +155,12 @@ This is a prompt instruction, not a code branch. It goes into the interview loop
 - References to state schema, spec template, and sample spec
 
 ### T10: Integration Test with Ralplan
-**Description**: End-to-end test: run a mock interview, generate a spec, then feed it to ralplan and verify the Planner subagent can parse and use it. Verify autopilot would detect the spec in .omha/specs/ and skip its requirements phase.
+**Description**: End-to-end test: run a mock interview, generate a spec, then feed it to ralplan and verify the Planner subagent can parse and use it. Verify autopilot would detect the spec in .omh/specs/ and skip its requirements phase.
 
 **Dependencies**: T9
 **Complexity**: Medium
 **Acceptance Criteria**:
-- A sample confirmed spec exists in .omha/specs/
+- A sample confirmed spec exists in .omh/specs/
 - Ralplan's Planner subagent receives the spec and produces a valid plan (doesn't ask for clarification that the spec already answers)
 - Autopilot detection logic confirmed (spec exists → skip requirements)
 - Any schema mismatches between spec output and consumer expectations documented and fixed

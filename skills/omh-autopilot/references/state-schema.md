@@ -1,6 +1,6 @@
 # Autopilot State Schema
 
-State file: `.omha/state/autopilot-state.json`
+State file: `.omh/state/autopilot-state.json`
 
 ## Schema
 
@@ -15,7 +15,7 @@ State file: `.omha/state/autopilot-state.json`
   "context_checkpoint": false,
   "spec_file": null,
   "plan_file": null,
-  "ralph_state_path": ".omha/state/ralph-state.json",
+  "ralph_state_path": ".omh/state/ralph-state.json",
   "ralph_iteration": 0,
   "qa_cycle": 0,
   "max_qa_cycles": 5,
@@ -58,7 +58,7 @@ Phase boundaries 2→3 and 3→4 set `context_checkpoint: true`.
 
 When no autopilot-state.json exists, check artifacts in order:
 
-1. `.omha/specs/*-spec.md` with `status: confirmed` → skip to Phase 1 (planning)
-2. `.omha/plans/ralplan-*.md` → skip to Phase 2 (execution)
-3. `.omha/state/ralph-state.json` with `phase: "complete"` → skip to Phase 3 (QA)
+1. `.omh/specs/*-spec.md` with `status: confirmed` → skip to Phase 1 (planning)
+2. `.omh/plans/ralplan-*.md` → skip to Phase 2 (execution)
+3. `.omh/state/ralph-state.json` with `phase: "complete"` → skip to Phase 3 (QA)
 4. Nothing → start at Phase 0 (requirements)

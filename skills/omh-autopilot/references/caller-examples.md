@@ -16,7 +16,7 @@ hermes chat --message "continue autopilot"
 
 Check progress anytime:
 ```bash
-cat .omha/state/autopilot-state.json | python3 -m json.tool
+cat .omh/state/autopilot-state.json | python3 -m json.tool
 ```
 
 ## Shell Script Loop
@@ -26,7 +26,7 @@ cat .omha/state/autopilot-state.json | python3 -m json.tool
 # autopilot-loop.sh — Drive autopilot to completion
 
 PROJECT_DIR="$(pwd)"
-STATE_FILE="$PROJECT_DIR/.omha/state/autopilot-state.json"
+STATE_FILE="$PROJECT_DIR/.omh/state/autopilot-state.json"
 
 # Initial invocation (or resume)
 while true; do
@@ -62,7 +62,7 @@ done
 # Schedule autopilot to run every 2 minutes
 hermes cron create \
     --schedule "every 2m" \
-    --prompt "Continue autopilot execution in $(pwd). Read .omha/state/autopilot-state.json and perform the next step." \
+    --prompt "Continue autopilot execution in $(pwd). Read .omh/state/autopilot-state.json and perform the next step." \
     --name "autopilot-$(basename $(pwd))"
 ```
 
@@ -75,8 +75,8 @@ hermes cron remove <job-id>
 ## Handling Blocked State
 
 When autopilot reports blocked:
-1. Read the state: `cat .omha/state/autopilot-state.json`
-2. Check ralph state if in Phase 2: `cat .omha/state/ralph-state.json`
+1. Read the state: `cat .omh/state/autopilot-state.json`
+2. Check ralph state if in Phase 2: `cat .omh/state/ralph-state.json`
 3. Fix the underlying issue
 4. Re-invoke: `hermes chat --message "continue autopilot"`
 

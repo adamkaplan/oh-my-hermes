@@ -1,4 +1,4 @@
-# OMHA Ralph — Implementation Plan
+# OMH Ralph — Implementation Plan
 
 **Date:** 2026-04-07
 **Status:** Draft — Pending consensus review
@@ -7,20 +7,20 @@
 
 ## Summary
 
-OMHA Ralph is a persistence loop skill for Hermes Agent that executes tasks
+OMH Ralph is a persistence loop skill for Hermes Agent that executes tasks
 from a plan and verifies completion through an independent reviewer. It
 translates OMC's ralph pattern (persistent-mode.cjs stop hook + prd.json story
 tracking + ultrawork parallel execution + architect verification) into
 Hermes-native primitives: strong prompt instructions for persistence,
-.omha/state/ files for resumability, delegate_task for parallel execution
+.omh/state/ files for resumability, delegate_task for parallel execution
 (max 3 concurrent), and role-based verification separation.
 
-The skill sits in the OMHA pipeline between ralplan (planning) and autopilot
+The skill sits in the OMH pipeline between ralplan (planning) and autopilot
 (full lifecycle): it receives a plan with numbered tasks and acceptance
 criteria, executes them one at a time through an executor subagent, verifies
 each through an independent architect subagent, and loops until all tasks
 pass or a circuit breaker triggers. Unlike OMC ralph which relies on a
-Node.js stop hook to mechanically prevent session exit, OMHA ralph uses
+Node.js stop hook to mechanically prevent session exit, OMH ralph uses
 skill instructions and state files — the agent is instructed to never
 consider itself done until all tasks are verified, and state files allow
 resumption if the session does end.
@@ -28,7 +28,7 @@ resumption if the session does end.
 The implementation is 7 tasks: state schema, planning gate, core loop
 skeleton, executor delegation, architect verification, 3-strike circuit
 breaker, and resumability. A final integration task wires it into the
-omha-autopilot pipeline.
+omh-autopilot pipeline.
 
 ---
 
@@ -40,12 +40,12 @@ omha-autopilot pipeline.
 **Description:**
 Define the ralph-state.json schema and task-tracking schema. OMC uses two
 separate files: ralph-state.json (loop metadata) and prd.json (story
-tracking). OMHA should use:
+tracking). OMH should use:
 
-- `.omha/state/ralph-state.json` — loop state (iteration, phase, errors)
-- `.omha/state/ralph-tasks.json` — task list with acceptance criteria and
+- `.omh/state/ralph-state.json` — loop state (iteration, phase, errors)
+- `.omh/state/ralph-tasks.json` — task list with acceptance criteria and
   pass/fail status (equivalent of prd.json but sourced from ralplan output)
-- `.omha/logs/ralph-progress.md` — append-only log (equivalent of progress.txt)
+- `.omh/logs/ralph-progress.md` — append-only log (equivalent of progress.txt)
 
 Schema for ralph-state.json (adapted from OMC reference lines 606-618):
 ```json
@@ -66,7 +66,7 @@ Schema for ralph-state.json (adapted from OMC reference lines 606-618):
 Schema for ralph-tasks.json (adapted from OMC prd.json, lines 666-681):
 ```json
 {
-  "source_plan": ".omha/plans/ralplan-consensus-*.md",
+  "source_plan": ".omh/plans/ralplan-consensus-*.md",
   "tasks": [
     {
       "id": "T-001",
@@ -95,18 +95,18 @@ Schema for ralph-tasks.json (adapted from OMC prd.json, lines 666-681):
 **Complexity:** Small
 **Dependencies:** Task 1
 **Description:**
-OMC ralph Step 1 (lines 79-96) requires a PRD before any code runs. OMHA
+OMC ralph Step 1 (lines 79-96) requires a PRD before any code runs. OMH
 ralph must enforce the same gate: refuse to execute without a plan containing
 tasks and acceptance criteria.
 
 The planning gate checks for:
-1. A ralplan consensus plan at `.omha/plans/ralplan-*.md` or
-   `.omha/plans/consensus-*.md`
-2. OR a manually provided plan at `.omha/plans/ralph-plan.md`
-3. OR task items already parsed into `.omha/state/ralph-tasks.json`
+1. A ralplan consensus plan at `.omh/plans/ralplan-*.md` or
+   `.omh/plans/consensus-*.md`
+2. OR a manually provided plan at `.omh/plans/ralph-plan.md`
+3. OR task items already parsed into `.omh/state/ralph-tasks.json`
 
 If no plan exists, ralph MUST NOT proceed. It should:
-- Tell the user to run omha-ralplan first
+- Tell the user to run omh-ralplan first
 - OR offer to parse an inline task list into ralph-tasks.json (simple mode)
 
 If a plan exists but ralph-tasks.json doesn't, ralph parses the plan's
@@ -188,12 +188,12 @@ Implement the executor subagent delegation. Each task is sent to an executor
 via delegate_task with the role-executor.md prompt as context.
 
 The delegation must include:
-1. The executor role prompt (from omha-ralplan/references/role-executor.md)
+1. The executor role prompt (from omh-ralplan/references/role-executor.md)
 2. The specific task description and acceptance criteria
 3. Project context (tech stack, conventions, relevant file paths)
 4. Previous iteration feedback (if this is a retry after architect rejection)
 
-OMC uses tiered routing (Haiku/Sonnet/Opus per lines 96-98). OMHA simplifies:
+OMC uses tiered routing (Haiku/Sonnet/Opus per lines 96-98). OMH simplifies:
 all executor work uses the default model. The orchestrator (ralph itself)
 handles complex reasoning; executors just implement.
 
@@ -236,7 +236,7 @@ explicitly state: "You are reviewing code. You MUST NOT modify any files.
 Your job is to read, analyze, and produce a verdict."
 
 The architect delegation includes:
-1. The architect role prompt (from omha-ralplan/references/role-architect.md)
+1. The architect role prompt (from omh-ralplan/references/role-architect.md)
 2. The task's acceptance criteria
 3. The executor's completion report
 4. The list of files modified
@@ -313,7 +313,7 @@ session state recovery (lines 580-596) and the architecture doc's state
 convention (lines 54-55).
 
 Resume logic:
-1. On invocation, check for `.omha/state/ralph-state.json`
+1. On invocation, check for `.omh/state/ralph-state.json`
 2. If exists and active=true:
    a. Check staleness (>2h → warn, offer fresh start)
    b. If not stale: "Found ralph state at iteration N, task [id],
@@ -428,7 +428,7 @@ expected format or manually create ralph-tasks.json.
 ## Open Questions
 
 ### Q1: Should ralph support running WITHOUT ralplan (ad-hoc mode)?
-OMC ralph supports --no-prd for legacy mode (line 66). Should omha-ralph
+OMC ralph supports --no-prd for legacy mode (line 66). Should omh-ralph
 allow a user to just say "ralph: implement X" without a formal plan?
 **Recommendation:** Yes, with a simple mode where the user provides an inline
 task list. The planning gate should be "tasks must exist" not "ralplan must
@@ -458,7 +458,7 @@ trail instead.
 ### Q5: Deslop pass — include or defer?
 OMC has a mandatory deslop pass (lines 131-139) that cleans AI-generated
 slop from code. The task brief says "optional, not built-in."
-**Recommendation:** Defer to omha-autopilot. Ralph's scope is
+**Recommendation:** Defer to omh-autopilot. Ralph's scope is
 execute+verify. Code quality passes belong in the full pipeline.
 
 ### Q6: What model should the architect verification use?

@@ -1,5 +1,5 @@
 ---
-name: omha-autopilot
+name: omh-autopilot
 description: >
   Full autonomous pipeline from idea to verified code. Composes deep-interview,
   ralplan, and ralph into 6 phases: Requirements → Planning → Execution → QA →
@@ -7,13 +7,13 @@ description: >
   until complete. Detects existing artifacts to skip completed phases.
 version: 1.0.0
 tags: [autopilot, pipeline, autonomous, end-to-end, composition]
-category: omha
+category: omh
 metadata:
   hermes:
     requires_toolsets: [terminal]
 ---
 
-# OMHA Autopilot — End-to-End Autonomous Pipeline
+# OMH Autopilot — End-to-End Autonomous Pipeline
 
 ## When to Use
 
@@ -25,7 +25,7 @@ metadata:
 
 - Single-file changes or trivial tasks (just do them)
 - You want to stay in one continuous session (autopilot is multi-session by design)
-- You only need planning (use omha-ralplan) or only need execution (use omha-ralph)
+- You only need planning (use omh-ralplan) or only need execution (use omh-ralph)
 
 ## Architecture: One Phase Step Per Invocation
 
@@ -61,7 +61,7 @@ See `references/caller-examples.md` for how to drive the loop.
 
 ### On Every Invocation: Dispatch
 
-1. **Check for state**: Read `.omha/state/autopilot-state.json`
+1. **Check for state**: Read `.omh/state/autopilot-state.json`
    - **Found**: Go to the handler for the current `phase`
    - **Not found**: Fresh start — go to Smart Detection below
 
@@ -81,9 +81,9 @@ See `references/caller-examples.md` for how to drive the loop.
 
 When no autopilot-state.json exists, detect existing artifacts:
 
-1. `.omha/specs/*-spec.md` with `status: confirmed` → create state at Phase 1, log "Skipping Phase 0: confirmed spec found"
-2. `.omha/plans/ralplan-*.md` or `.omha/plans/consensus-*.md` → create state at Phase 2, log "Skipping Phases 0-1: consensus plan found"
-3. `.omha/state/ralph-state.json` with `phase: "complete"` → create state at Phase 3, log "Skipping Phases 0-2: ralph execution complete"
+1. `.omh/specs/*-spec.md` with `status: confirmed` → create state at Phase 1, log "Skipping Phase 0: confirmed spec found"
+2. `.omh/plans/ralplan-*.md` or `.omh/plans/consensus-*.md` → create state at Phase 2, log "Skipping Phases 0-1: consensus plan found"
+3. `.omh/state/ralph-state.json` with `phase: "complete"` → create state at Phase 3, log "Skipping Phases 0-2: ralph execution complete"
 4. Nothing found → create state at Phase 0
 
 Also check: if `ralph-state.json` exists with `active: true` but no autopilot-state.json,
@@ -95,13 +95,13 @@ Generate `session_id` (UUID), set `started_at`, create autopilot-state.json.
 
 **Goal**: Ensure a confirmed spec exists.
 
-1. Check for confirmed spec at `.omha/specs/*-spec.md` (YAML frontmatter `status: confirmed`)
+1. Check for confirmed spec at `.omh/specs/*-spec.md` (YAML frontmatter `status: confirmed`)
 2. If found: set `spec_file`, advance to Phase 1, exit
 3. If not found, assess the user's input:
-   - **Concrete** (contains file paths, function names, specific technologies, quantified requirements): Generate an inline spec at `.omha/specs/{slug}-spec.md` with `status: confirmed`. Advance to Phase 1, exit.
-   - **Vague** (abstract goals, no technical anchors): Load `omha-deep-interview` and follow its procedure. **This phase is interactive** — the user must participate in the interview. When the interview produces a confirmed spec, advance to Phase 1, exit.
+   - **Concrete** (contains file paths, function names, specific technologies, quantified requirements): Generate an inline spec at `.omh/specs/{slug}-spec.md` with `status: confirmed`. Advance to Phase 1, exit.
+   - **Vague** (abstract goals, no technical anchors): Load `omh-deep-interview` and follow its procedure. **This phase is interactive** — the user must participate in the interview. When the interview produces a confirmed spec, advance to Phase 1, exit.
 
-**Important**: For fully autonomous execution, run `omha-deep-interview` separately first. Autopilot will detect the confirmed spec and skip Phase 0 entirely.
+**Important**: For fully autonomous execution, run `omh-deep-interview` separately first. Autopilot will detect the confirmed spec and skip Phase 0 entirely.
 
 Update state: `phase: "planning"`, `spec_file: "<path>"`. Exit.
 
@@ -109,9 +109,9 @@ Update state: `phase: "planning"`, `spec_file: "<path>"`. Exit.
 
 **Goal**: Ensure a consensus plan exists.
 
-1. Check for existing plan at `.omha/plans/ralplan-*.md` or `.omha/plans/consensus-*.md`
+1. Check for existing plan at `.omh/plans/ralplan-*.md` or `.omh/plans/consensus-*.md`
 2. If found: set `plan_file`, advance to Phase 2, exit
-3. If not found: Load `omha-ralplan` and follow its procedure, using the spec from Phase 0 as the goal input
+3. If not found: Load `omh-ralplan` and follow its procedure, using the spec from Phase 0 as the goal input
 
 Update state: `phase: "execution"`, `plan_file: "<path>"`, `ralph_iteration: 0`, `context_checkpoint: true`. Exit.
 
@@ -123,7 +123,7 @@ The `context_checkpoint` ensures Phase 2 starts in a fresh session.
 
 Each invocation during Phase 2 performs **exactly ONE ralph iteration**:
 
-1. Load `omha-ralph` skill
+1. Load `omh-ralph` skill
 2. Follow ralph's procedure — it will:
    - Read ralph-state.json and ralph-tasks.json
    - On first invocation: parse the plan into ralph-tasks.json (planning gate)
@@ -132,7 +132,7 @@ Each invocation during Phase 2 performs **exactly ONE ralph iteration**:
    - Gather evidence (run builds/tests)
    - Delegate to verifier subagent
    - Update ralph state
-3. After ralph's procedure completes, read `.omha/state/ralph-state.json`:
+3. After ralph's procedure completes, read `.omh/state/ralph-state.json`:
    - `active: true`, `phase: "execute"` or `"verify"` → increment `ralph_iteration`, exit (caller re-invokes)
    - `phase: "complete"` → advance autopilot to Phase 3
    - `phase: "blocked"` → set autopilot `phase: "blocked"`, report blockers, exit
@@ -184,9 +184,9 @@ delegate_task(tasks=[
 ```
 
 Load role prompts:
-- Architect: `omha-ralplan/references/role-architect.md`
-- Security: `omha-ralplan/references/role-security-reviewer.md`
-- Code reviewer: `omha-autopilot/references/role-code-reviewer.md`
+- Architect: `omh-ralplan/references/role-architect.md`
+- Security: `omh-ralplan/references/role-security-reviewer.md`
+- Code reviewer: `omh-autopilot/references/role-code-reviewer.md`
 
 3. Parse verdicts. Record in `validation_verdicts`:
    ```json
@@ -210,10 +210,10 @@ Load role prompts:
    - `ralph-tasks.json`
    - `ralph-cancel.json` (if exists)
 3. Preserve:
-   - `.omha/logs/` (audit trail)
-   - `.omha/plans/` (consensus plans)
-   - `.omha/specs/` (confirmed specs)
-   - `.omha/progress/ralph-progress.md` (execution log)
+   - `.omh/logs/` (audit trail)
+   - `.omh/plans/` (consensus plans)
+   - `.omh/specs/` (confirmed specs)
+   - `.omh/progress/ralph-progress.md` (execution log)
 4. Report completion summary:
    - Original goal
    - Phases completed (with skips noted)
@@ -228,17 +228,17 @@ See `references/state-schema.md` for full schema.
 
 Key rules:
 - Atomic writes (write to `.tmp`, then rename)
-- Evidence truncation: build/test output capped at 2000 chars in state (keep the end). Full output in `.omha/logs/`.
+- Evidence truncation: build/test output capped at 2000 chars in state (keep the end). Full output in `.omh/logs/`.
 - Phase boundaries set `context_checkpoint: true`
 - Staleness warning at >2 hours since last update
 
 ## Sentinel Convention
 
 Other skills/callers detect autopilot status by checking:
-- `.omha/state/autopilot-state.json` exists → autopilot is in progress (check `phase` for details)
+- `.omh/state/autopilot-state.json` exists → autopilot is in progress (check `phase` for details)
 - `phase: "complete"` → autopilot finished successfully
 - `phase: "blocked"` → autopilot needs intervention
-- No state file + `.omha/logs/` exists → autopilot ran and completed (state was cleaned up)
+- No state file + `.omh/logs/` exists → autopilot ran and completed (state was cleaned up)
 
 ## Pitfalls
 
@@ -246,7 +246,7 @@ Other skills/callers detect autopilot status by checking:
 - **Don't reimplement ralph.** Load the ralph skill and follow its procedure. Autopilot orchestrates, ralph executes.
 - **Phase boundaries require fresh sessions.** Respect `context_checkpoint`. Don't try to squeeze Phase 3 into the same session as the last ralph iteration.
 - **Don't skip QA.** Ralph verifies per-task. QA catches integration issues across tasks that per-task verification misses.
-- **Phase 0 is interactive if no spec exists.** For cron/automated runs, pre-create a confirmed spec with `omha-deep-interview`.
+- **Phase 0 is interactive if no spec exists.** For cron/automated runs, pre-create a confirmed spec with `omh-deep-interview`.
 - **Subagent limit: 3.** Phase 4 uses all 3 slots for parallel review. Don't try to add a 4th reviewer.
 - **Evidence truncation: always cap.** Build/test output in state at 2000 chars max. Full output goes to logs.
 - **Don't run multiple autopilot sessions.** One autopilot per project at a time. Check for existing state before creating new.

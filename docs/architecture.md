@@ -1,32 +1,32 @@
-# OMHA Architecture
+# OMH Architecture
 
 ## Composition Model
 
-OMHA skills compose as layers, each usable standalone or as part of a larger pipeline:
+OMH skills compose as layers, each usable standalone or as part of a larger pipeline:
 
 ```
-omha-deep-interview (requirements)
+omh-deep-interview (requirements)
         ↓ produces spec
-omha-ralplan (consensus planning)
+omh-ralplan (consensus planning)
         ↓ produces plan
-omha-ralph (persistence execution)
+omh-ralph (persistence execution)
         ↓ produces verified code
-omha-autopilot (full pipeline — composes all three)
+omh-autopilot (full pipeline — composes all three)
 ```
 
 ## Primitives
 
-All OMHA skills are built on three Hermes primitives:
+All OMH skills are built on three Hermes primitives:
 
 1. **delegate_task** — Spawn isolated subagents with role-specific context
-2. **File-based state** — `.omha/` directory for persistence and inter-phase handoffs
+2. **File-based state** — `.omh/` directory for persistence and inter-phase handoffs
 3. **todo** — Session-level task tracking for visibility
 
-No custom tools, no code changes to Hermes Agent, no plugins required.
+No custom tools, no code changes to Hermes, no plugins required.
 
 ## Role Prompts
 
-Shared role prompts live in `omha-ralplan/references/` (since ralplan is the
+Shared role prompts live in `omh-ralplan/references/` (since ralplan is the
 bootstrap skill). Each prompt defines:
 
 - Responsibilities
@@ -44,7 +44,7 @@ context with only the role prompt + task description + project context.
 ## State Convention
 
 ```
-.omha/
+.omh/
 ├── state/     # Active mode state (JSON) — deleted on completion
 ├── plans/     # Consensus plans (Markdown) — persisted
 ├── specs/     # Interview specifications (Markdown) — persisted

@@ -1,5 +1,5 @@
 ---
-name: omha-deep-interview
+name: omh-deep-interview
 description: >
   Socratic requirements interview that reduces ambiguity before planning or implementation.
   Asks targeted questions across four dimensions (Goal, Constraints, Success Criteria,
@@ -7,33 +7,33 @@ description: >
   specification. Exit is always user-confirmed. Use when goals are vague or underspecified.
 version: 1.0.0
 tags: [interview, requirements, socratic, ambiguity, specification]
-category: omha
+category: omh
 metadata:
   hermes:
     requires_toolsets: [terminal]
 ---
 
-# OMHA Deep Interview — Requirements Specification Through Conversation
+# OMH Deep Interview — Requirements Specification Through Conversation
 
 ## When to Use
 
 - The goal is vague, underspecified, or could be interpreted multiple ways
-- Before planning (omha-ralplan) or implementation on non-trivial work
+- Before planning (omh-ralplan) or implementation on non-trivial work
 - The user says: "deep interview", "requirements", "what should we build", "help me think through this"
-- omha-ralplan determines the goal is too ambiguous to plan
+- omh-ralplan determines the goal is too ambiguous to plan
 - You're unsure what the user actually wants
 
 ## When NOT to Use
 
 - The goal is already crystal clear and bounded
-- A confirmed spec already exists in `.omha/specs/` for this project
+- A confirmed spec already exists in `.omh/specs/` for this project
 - The user explicitly wants to skip requirements gathering
 - Trivial single-file changes where the task is obvious
 
 ## Prerequisites
 
 - Conversational access to the user (this skill asks questions and needs answers)
-- Write access to `.omha/` directory for state and spec files
+- Write access to `.omh/` directory for state and spec files
 
 ## Procedure
 
@@ -44,7 +44,7 @@ and file writes for state and spec output.
 
 Before starting a new interview:
 
-1. Check if `.omha/state/interview-*.json` exists with `status: "active"` or `status: "paused"`
+1. Check if `.omh/state/interview-*.json` exists with `status: "active"` or `status: "paused"`
 2. If found, tell the user: "There's an active interview for '{project_name}' from {started_at}. Resume it, or abandon and start fresh?"
 3. If resuming: load the state, read the round summaries to reconstruct context, and continue from the last completed round
 4. If abandoning: set status to "abandoned" in the old state file, then proceed to Phase 1
@@ -60,7 +60,7 @@ Start the interview with two questions:
 Then:
 - Generate an interview ID: `di-{YYYYMMDD}-{short_random}` (e.g., `di-20260407-x7k`)
 - Ask the user for a short project name (for filenames)
-- Create the state file at `.omha/state/interview-{id}.json` with:
+- Create the state file at `.omh/state/interview-{id}.json` with:
   - All coverage dimensions set to `HIGH`
   - `type` set to `greenfield` or `brownfield` based on user's answer
   - `existing_context` coverage set to `N/A` for greenfield projects
@@ -155,7 +155,7 @@ When the user confirms exit (or max rounds reached):
    - `status: draft`
    - `coverage`: current bin values
    - `rounds_completed`: total rounds done
-5. Write to `.omha/specs/{project-name}-spec.md`
+5. Write to `.omh/specs/{project-name}-spec.md`
 6. Update state: `spec_file` = path to spec
 
 ### Phase 4: Confirmation
@@ -172,7 +172,7 @@ Handle each response:
 **On confirm**:
 - Update spec frontmatter: `status: confirmed`
 - Update state: `status: confirmed`
-- Tell the user: "Spec confirmed and saved to {path}. You can now use `omha-ralplan` to create an implementation plan from this spec."
+- Tell the user: "Spec confirmed and saved to {path}. You can now use `omh-ralplan` to create an implementation plan from this spec."
 
 **On request changes**:
 - Ask targeted follow-up questions about the specific sections the user wants changed
@@ -188,15 +188,15 @@ Handle each response:
 
 ### Phase 5: Logging
 
-Throughout the interview, write structured events to `.omha/logs/interview-{id}.log`:
+Throughout the interview, write structured events to `.omh/logs/interview-{id}.log`:
 
 ```
 2026-04-07T06:30:00Z STARTED interview_id=di-20260407-x7k project=my-project type=greenfield
 2026-04-07T06:31:15Z ROUND round=1 dimension=goal coverage_change=goal:HIGH→MEDIUM
 2026-04-07T06:33:42Z ROUND round=2 dimension=constraints coverage_change=constraints:HIGH→LOW
 2026-04-07T06:35:00Z USER_EXIT round=3 reason=user_confirmed
-2026-04-07T06:35:30Z SPEC_GENERATED path=.omha/specs/my-project-spec.md status=draft
-2026-04-07T06:36:00Z SPEC_CONFIRMED path=.omha/specs/my-project-spec.md
+2026-04-07T06:35:30Z SPEC_GENERATED path=.omh/specs/my-project-spec.md status=draft
+2026-04-07T06:36:00Z SPEC_CONFIRMED path=.omh/specs/my-project-spec.md
 ```
 
 Log events and decisions only — NOT conversation content.
@@ -204,15 +204,15 @@ Log events and decisions only — NOT conversation content.
 ## Sentinel Convention
 
 Downstream skills detect completed interviews by checking for files matching
-`.omha/specs/*-spec.md` with `status: confirmed` in the YAML frontmatter.
+`.omh/specs/*-spec.md` with `status: confirmed` in the YAML frontmatter.
 
-- **omha-ralplan**: If a confirmed spec exists, use it as the goal/specification input
+- **omh-ralplan**: If a confirmed spec exists, use it as the goal/specification input
   to the Planner subagent instead of asking the user to describe the goal.
-- **omha-autopilot**: If a confirmed spec exists, skip Phase 0 (requirements) entirely.
+- **omh-autopilot**: If a confirmed spec exists, skip Phase 0 (requirements) entirely.
 
 ## State Management
 
-State file: `.omha/state/interview-{id}.json`
+State file: `.omh/state/interview-{id}.json`
 
 See `references/state-schema.md` for the full schema.
 

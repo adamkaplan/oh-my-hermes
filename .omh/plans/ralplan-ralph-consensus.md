@@ -1,14 +1,14 @@
-# OMHA Ralph — Implementation Plan v2
+# OMH Ralph — Implementation Plan v2
 
 **Date:** 2026-04-07
 **Status:** Draft v2 — Revised per Architect + Critic consensus feedback
-**Supersedes:** omha-ralph-implementation-plan.md (v1)
+**Supersedes:** omh-ralph-implementation-plan.md (v1)
 
 ---
 
 ## Summary
 
-OMHA Ralph is a persistence execution skill for Hermes Agent that executes
+OMH Ralph is a persistence execution skill for Hermes Agent that executes
 tasks from a plan and verifies completion through independent reviewers.
 
 ### Architectural Change from v1: One-Task-Per-Invocation
@@ -36,7 +36,7 @@ cron, or the user) to re-invoke.
 The execution model per invocation:
 
 ```
-1. Read .omha/state/ralph-state.json and ralph-tasks.json
+1. Read .omh/state/ralph-state.json and ralph-tasks.json
 2. Check for cancel signal → abort if present
 3. Pick next task (highest priority, passes=false)
 4. Delegate to executor subagent (single task)
@@ -54,7 +54,7 @@ next invocation and marks the plan complete.
 
 ### OMC Mapping
 
-| OMC Component | OMHA Equivalent |
+| OMC Component | OMH Equivalent |
 |---|---|
 | persistent-mode.cjs stop hook | State files + re-invocation by caller |
 | prd.json story tracking | ralph-tasks.json |
@@ -65,19 +65,19 @@ next invocation and marks the plan complete.
 | Verifier agent (Sonnet) | delegate_task with role-verifier.md (evidence checking) |
 | ultrawork parallel execution | Parallel delegate_task (max 3 concurrent) |
 | 3-strike circuit breaker | Error fingerprinting with structured matching |
-| cancel signal | .omha/state/ralph-cancel.json |
+| cancel signal | .omh/state/ralph-cancel.json |
 | Deslop pass | **Deferred** — see Divergence D5 |
 
 ### Explicit OMC Divergences
 
-| ID | OMC Pattern | OMHA Choice | Justification |
+| ID | OMC Pattern | OMH Choice | Justification |
 |---|---|---|---|
 | D1 | Stop hook mechanically prevents exit | State files + re-invocation | Hermes has no stop hook. State files are the persistence mechanism. |
 | D2 | max_iterations=100, auto-extends by 10 | max_iterations=100, configurable, hard cap | OMC auto-extends because the hook can enforce it. Without a hook, a hard cap prevents runaway. |
 | D3 | Tiered model routing (Haiku/Sonnet/Opus) | Single model (user's configured model) | Hermes delegate_task doesn't support model selection. Document as limitation. |
 | D4 | 6 concurrent child agents | 3 concurrent subagents | Hermes constraint (architecture.md line 61). |
-| D5 | Mandatory deslop pass (ai-slop-cleaner) | Deferred to omha-autopilot | Ralph's scope is execute+verify. Code quality passes belong in the full pipeline. Per task brief: "optional, not built-in." |
-| D6 | Session-scoped state dirs (.omc/state/sessions/{id}/) | Flat .omha/state/ with session_id field | Hermes uses a simpler state layout. session_id in the JSON prevents cross-contamination. |
+| D5 | Mandatory deslop pass (ai-slop-cleaner) | Deferred to omh-autopilot | Ralph's scope is execute+verify. Code quality passes belong in the full pipeline. Per task brief: "optional, not built-in." |
+| D6 | Session-scoped state dirs (.omc/state/sessions/{id}/) | Flat .omh/state/ with session_id field | Hermes uses a simpler state layout. session_id in the JSON prevents cross-contamination. |
 
 ---
 
@@ -92,10 +92,10 @@ Aligns with OMC state fields (reference lines 606-618) with all required
 fields present.
 
 File layout:
-- `.omha/state/ralph-state.json` — loop state
-- `.omha/state/ralph-tasks.json` — task list with acceptance criteria
-- `.omha/state/ralph-cancel.json` — cancel signal (Addresses: Architect C1, Critic C4)
-- `.omha/logs/ralph-progress.md` — append-only log with learnings
+- `.omh/state/ralph-state.json` — loop state
+- `.omh/state/ralph-tasks.json` — task list with acceptance criteria
+- `.omh/state/ralph-cancel.json` — cancel signal (Addresses: Architect C1, Critic C4)
+- `.omh/logs/ralph-progress.md` — append-only log with learnings
 
 Schema for ralph-state.json:
 ```json
@@ -132,7 +132,7 @@ Schema for ralph-state.json:
 Schema for ralph-tasks.json:
 ```json
 {
-  "source_plan": ".omha/plans/ralplan-consensus-*.md",
+  "source_plan": ".omh/plans/ralplan-consensus-*.md",
   "tasks": [
     {
       "id": "T-001",
@@ -194,16 +194,16 @@ independently verified.
 **Dependencies:** Task 1
 **Description:**
 OMC ralph Step 1 (reference lines 79-96) requires a PRD before any code
-runs. OMHA ralph must enforce the same gate.
+runs. OMH ralph must enforce the same gate.
 
 The planning gate checks for:
-1. A ralplan consensus plan at `.omha/plans/ralplan-*.md` or
-   `.omha/plans/consensus-*.md`
-2. OR a manually provided plan at `.omha/plans/ralph-plan.md`
-3. OR task items already parsed into `.omha/state/ralph-tasks.json`
+1. A ralplan consensus plan at `.omh/plans/ralplan-*.md` or
+   `.omh/plans/consensus-*.md`
+2. OR a manually provided plan at `.omh/plans/ralph-plan.md`
+3. OR task items already parsed into `.omh/state/ralph-tasks.json`
 
 If no plan exists, ralph MUST NOT proceed. It should:
-- Tell the user to run omha-ralplan first
+- Tell the user to run omh-ralplan first
 - OR offer to parse an inline task list into ralph-tasks.json (simple mode)
 
 Plan parsing rules:
@@ -241,7 +241,7 @@ ON INVOCATION:
      - If found and active=false, phase="complete": report completion
      - If found and active=false, phase="blocked": report blocker
      - If found and active=false, phase="cancelled": report cancellation
-  2. Check cancel signal (.omha/state/ralph-cancel.json)
+  2. Check cancel signal (.omh/state/ralph-cancel.json)
      - If present and within TTL: set phase="cancelled", exit
   3. Check staleness: last_updated_at > 2 hours ago
      - Warn user, offer fresh start (Addresses: Architect M3 — staleness
@@ -318,7 +318,7 @@ Implement the executor subagent delegation. Each task is sent to an executor
 via delegate_task.
 
 The delegation must include:
-1. The executor role prompt (from omha-ralplan/references/role-executor.md)
+1. The executor role prompt (from omh-ralplan/references/role-executor.md)
 2. The specific task description and acceptance criteria
 3. Project context (tech stack, conventions, relevant file paths)
 4. Previous iteration feedback (if this is a retry after verifier rejection)
@@ -344,7 +344,7 @@ Executor output format:
 
 **Parallel execution (Addresses: Critic W1, W4):**
 
-OMC default is parallel-first (Pattern 11, reference line 751). OMHA
+OMC default is parallel-first (Pattern 11, reference line 751). OMH
 adopts parallel-first with explicit independence detection:
 
 Independence rule: two tasks are independent if and only if:
@@ -483,7 +483,7 @@ When 3-strike triggers:
 **Cancel/Abort Mechanism (Addresses: Architect C1, Critic C4):**
 
 The user can cancel ralph by:
-1. Creating `.omha/state/ralph-cancel.json` with `requested_by: "user"`
+1. Creating `.omh/state/ralph-cancel.json` with `requested_by: "user"`
 2. Or: ralph skill prompt instructs the agent that if the user says "stop",
    "cancel", or "abort", write the cancel file and exit
 3. Or: autopilot/caller writes the cancel file
@@ -492,7 +492,7 @@ On cancel detection:
 1. Set phase="cancelled" in ralph-state.json
 2. DO NOT delete state files (allow resume later)
 3. Report: "Ralph cancelled at iteration N, task [id]. State preserved
-   for resume. Delete .omha/state/ralph-cancel.json and re-invoke to continue."
+   for resume. Delete .omh/state/ralph-cancel.json and re-invoke to continue."
 
 **Circuit Breakers:**
 
@@ -505,7 +505,7 @@ On cancel detection:
 
 max_iterations defaults to 100 (matching OMC, reference line 609).
 (Addresses: Architect C7, Critic W3). Unlike OMC which auto-extends,
-OMHA uses a hard cap because there is no stop hook to enforce extension.
+OMH uses a hard cap because there is no stop hook to enforce extension.
 Users can set a higher value in ralph-state.json before invocation.
 
 **Acceptance Criteria:**
@@ -586,7 +586,7 @@ appropriate priority level.
 **Description:**
 Create the verifier role prompt based on OMC's verifier agent
 (reference lines 544-574). This prompt goes in
-omha-ralplan/references/role-verifier.md alongside the existing
+omh-ralplan/references/role-verifier.md alongside the existing
 role-architect.md and role-executor.md.
 
 The verifier is distinct from the architect:
@@ -603,7 +603,7 @@ The prompt must encode:
 - Investigation protocol: DEFINE → EXECUTE → GAP ANALYSIS → VERDICT
 
 **Acceptance Criteria:**
-- [ ] role-verifier.md created in omha-ralplan/references/
+- [ ] role-verifier.md created in omh-ralplan/references/
 - [ ] Clearly distinct from role-architect.md
 - [ ] Evidence-first principle encoded
 - [ ] Structured output format specified
@@ -744,7 +744,7 @@ dependencies for future tasks.
 **Recommendation:** This is autopilot's problem, not ralph's. Ralph is
 a single-invocation skill. Autopilot can: (a) use a while-loop in its
 prompt instructions, (b) check ralph-state.json after each invocation,
-(c) re-invoke until phase="complete". Details deferred to omha-autopilot
+(c) re-invoke until phase="complete". Details deferred to omh-autopilot
 implementation plan.
 
 ---

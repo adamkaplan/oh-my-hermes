@@ -1,6 +1,6 @@
 # Deep Interview State Schema
 
-State file: `.omha/state/interview-{id}.json`
+State file: `.omh/state/interview-{id}.json`
 
 Only one active interview at a time. If an active state file exists when the skill
 is invoked, offer to resume or abandon it.
