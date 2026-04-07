@@ -47,7 +47,7 @@ Before planning, gather project context:
 **Round 1 — All Sequential** (Planner → Architect → Critic):
 
 **Step 1 — Planner** (single delegate_task)
-Load `references/role-planner.md`. Include the FULL role prompt text in the context, not a reference to it — subagents can't load skill files.
+Load `references/role-planner.md`. Pass the FULL role prompt text as part of the delegate_task context field — subagents can't load skill files, so the prompt must be inlined.
 ```
 delegate_task(
     goal="Create an implementation plan for: {goal}\n\n{detailed_requirements}",

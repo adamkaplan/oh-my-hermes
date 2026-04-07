@@ -114,7 +114,7 @@ delegate_task(
 )
 ```
 
-Load the executor role prompt from `omha-ralplan/references/role-executor.md`. Include the FULL prompt text — subagents can't load skill files.
+Load the executor role prompt from `omha-ralplan/references/role-executor.md`. Pass the FULL prompt text inlined in the delegate_task call — subagents can't load skill files.
 
 The executor prompt instructs self-verification before reporting COMPLETE:
 - Run any inline tests it can
@@ -159,7 +159,7 @@ Parse the verifier's response:
   {"task_id": "T-001", "summary": "what was done", "files_changed": [...], "gotchas": "..."}
   ```
   Append completion entry to `.omha/logs/ralph-progress.md`.
-- **REQUEST_CHANGES / FAIL**: Record `verifier_verdict` on the task. Record error fingerprint. Check 3-strike rule (Step 6). The task will be retried on the next invocation with the verifier's feedback included in the executor context.
+- **REQUEST_CHANGES / FAIL**: Record `verifier_verdict` on the task. Record error fingerprint. Check 3-strike rule (Step 6). The task will be retried on the next invocation with the verifier's feedback passed to the executor.
 
 ### Step 6: Error Handling
 
