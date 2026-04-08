@@ -4,14 +4,52 @@ OMH Plugin — infrastructure layer for Oh My Hermes skills.
 Registers:
   Tools: omh_state, omh_gather_evidence
   Hooks: pre_llm_call, on_session_end
+  Skills: omh-ralplan, omh-ralph, omh-deep-interview, omh-autopilot (bundled)
 """
 
+import logging
+import shutil
+from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 _TOOLSET = "omh"
 
 
+def _install_skills():
+    """Install bundled skills to ~/.hermes/skills/ on every load (overwrite always).
+
+    Always overwrites to ensure the plugin is the authoritative source —
+    stale skills from cached environments are replaced.
+    """
+    try:
+        from hermes_cli.config import get_hermes_home
+        skills_dest_root = get_hermes_home() / "skills"
+    except Exception:
+        skills_dest_root = Path.home() / ".hermes" / "skills"
+
+    skills_src_root = Path(__file__).parent / "skills"
+    if not skills_src_root.exists():
+        return
+
+    skills_dest_root.mkdir(parents=True, exist_ok=True)
+
+    for skill_dir in skills_src_root.iterdir():
+        if not skill_dir.is_dir():
+            continue
+        dest = skills_dest_root / skill_dir.name
+        try:
+            if dest.exists():
+                shutil.rmtree(dest)
+            shutil.copytree(skill_dir, dest)
+        except Exception as e:
+            logger.warning("Failed to install skill '%s': %s", skill_dir.name, e)
+
+
 def register(ctx):
     """Entry point called by Hermes plugin discovery."""
+    _install_skills()
+
     from .tools.state_tool import OMH_STATE_SCHEMA, omh_state_handler
     from .tools.evidence_tool import OMH_EVIDENCE_SCHEMA, omh_evidence_handler
     from .hooks.llm_hooks import pre_llm_call
