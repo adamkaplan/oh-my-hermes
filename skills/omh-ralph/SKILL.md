@@ -10,8 +10,7 @@ tags: [execution, verification, persistence, iron-law, loop]
 category: omh
 metadata:
   hermes:
-    requires_toolsets: [terminal]
-    requires_plugins: [omh]
+    requires_toolsets: [terminal, omh]
 ---
 
 # OMH Ralph — Verified Execution (v2)
