@@ -49,6 +49,7 @@ Hermes Agent v0.7.0+. The plugin additionally requires Python 3.10+ and
 
 - [`docs/concepts.md`](docs/concepts.md) — How the four skills work
 - [`docs/plugin.md`](docs/plugin.md) — The v2 plugin (roles, hooks, tools)
+- [`docs/omh-delegate.md`](docs/omh-delegate.md) — Hardened delegation wrapper
 - [`docs/omc-comparison.md`](docs/omc-comparison.md) — Origins and design choices vs OMC
 - [`docs/hermes-constraints.md`](docs/hermes-constraints.md) — How OMH works around Hermes limits
 - [`docs/gaps.md`](docs/gaps.md) — What's not built yet
