@@ -172,7 +172,7 @@ For `--critic=codex`, the prompt MUST include:
 - Fire independent agent calls simultaneously — never wait sequentially
 - Use `run_in_background: true` for long operations
 - Always pass `model` parameter explicitly when delegating
-- Read `docs/shared/agent-tiers.md` before first delegation
+- Read `agent-tiers` code before first delegation
 - Deliver FULL implementation: no scope reduction, no partial completion, no deleting tests
 
 ---
