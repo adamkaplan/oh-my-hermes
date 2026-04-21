@@ -51,6 +51,26 @@ def test_write_creates_file():
     assert path.exists()
 
 
+def test_state_dir_creation_seeds_dot_omh_readme_and_gitignore():
+    """First write to .omh/ should drop README.md and .gitignore from templates."""
+    state_write("ralph", {"active": True})
+    readme = Path(".omh/README.md")
+    gitignore = Path(".omh/.gitignore")
+    assert readme.exists(), "expected .omh/README.md to be seeded"
+    assert gitignore.exists(), "expected .omh/.gitignore to be seeded"
+    assert "selective sharing" in readme.read_text()
+    assert "state/" in gitignore.read_text()
+
+
+def test_seed_does_not_overwrite_user_edits():
+    """If user has already customized .omh/README.md, don't clobber it."""
+    Path(".omh").mkdir(exist_ok=True)
+    custom = "# my project's custom .omh notes\n"
+    Path(".omh/README.md").write_text(custom)
+    state_write("ralph", {"active": True})
+    assert Path(".omh/README.md").read_text() == custom
+
+
 def test_read_returns_data_without_meta():
     state_write("ralph", {"active": True, "phase": "execute"})
     result = state_read("ralph")

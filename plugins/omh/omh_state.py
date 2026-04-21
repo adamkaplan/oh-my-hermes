@@ -31,10 +31,34 @@ _LIST_CACHE_TTL_SECONDS = 5.0
 _list_cache: dict[str, Any] = {"result": None, "expires_at": 0.0}
 
 
+_TEMPLATES_DIR = Path(__file__).parent / "templates"
+
+
+def _seed_dot_omh(omh_dir: Path) -> None:
+    """Drop README.md and .gitignore into .omh/ if missing.
+
+    Idempotent: only writes files that don't exist. Templates ship with the
+    plugin; user edits to the seeded files are preserved across runs.
+    """
+    seed_files = {
+        "README.md": _TEMPLATES_DIR / "dot-omh-readme.md",
+        ".gitignore": _TEMPLATES_DIR / "dot-omh-gitignore",
+    }
+    for dest_name, template_path in seed_files.items():
+        dest = omh_dir / dest_name
+        if dest.exists():
+            continue
+        try:
+            dest.write_text(template_path.read_text(encoding="utf-8"), encoding="utf-8")
+        except Exception as e:
+            logger.warning("Failed to seed %s: %s", dest, e)
+
+
 def _state_dir() -> Path:
     config = get_config()
     p = Path(config.get("state_dir", ".omh/state"))
     p.mkdir(parents=True, exist_ok=True)
+    _seed_dot_omh(p.parent)
     return p
 
 
