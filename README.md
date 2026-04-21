@@ -38,6 +38,8 @@ Or copy `skills/<name>/` to `~/.hermes/skills/omh/` manually.
 For the optional plugin: install `plugins/omh/` to `~/.hermes/plugins/omh/`
 (requires Python 3.10+ and `pyyaml`).
 
+For local development (live edits via symlinks), see [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Getting Started
 
 - **Need background on an unfamiliar domain?** → `omh-deep-research`
