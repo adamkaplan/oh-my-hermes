@@ -9,6 +9,22 @@ It addresses two failure modes observed in real usage:
   that motivated this work — 14.8 minutes of subagent reasoning gone).
 - **FM2.** Subagent stalls on its own `write_file` and never returns.
 
+## Why this wrapper exists (architectural framing)
+
+`omh_delegate` mitigates an **intentional architectural property** of
+Hermes's `delegate_task`, not a bug. By design, `delegate_task` returns
+*only the subagent's final summary* to the parent — intermediate tool
+calls and reasoning never enter the parent's context. This is what makes
+delegation context-efficient (the whole point of the primitive); it is
+also what makes FM1 catastrophic when the parent's tool dispatch hiccups
+mid-write. There is no upstream fix to wait for: the contract is the
+feature. The subagent-persists pattern in this wrapper is the right
+shape for the hazard, and should stay even as Hermes evolves.
+
+See [`research/hermes-multiagent.md`](research/hermes-multiagent.md) §7
+("Subagent isolation properties") for the full list of hard guarantees
+this wrapper builds against.
+
 ## Design
 
 v0 implements **pure subagent-persists** — the subagent is given a
