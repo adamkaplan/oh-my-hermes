@@ -1,7 +1,6 @@
 """Tests for plugins/omh/__init__.py — _install_skills behavior."""
 
 import shutil
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -50,7 +49,7 @@ def test_install_skills_cleans_up_tmp_on_error(tmp_path, skill_src):
     dest_root = tmp_path / "skills_dest"
     dest_root.mkdir()
 
-    # Make copytree fail by making the tmp_dest unwritable after creation
+    # Simulate copytree failing after populating tmp_dest, before rename/atomic install completes
     original_copytree = shutil.copytree
 
     def fail_copytree(src, dst, **kwargs):
