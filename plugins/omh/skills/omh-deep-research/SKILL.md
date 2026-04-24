@@ -1,11 +1,6 @@
 ---
 name: omh-deep-research
-description: >
-  Multi-phase web research that decomposes a topic into subtopics, dispatches
-  parallel researcher subagents, synthesizes a report, and verifies citations
-  before marking it confirmed. State is durable: kill at any phase boundary
-  and re-invoke to resume. Sentinel: `.omh/research/{slug}-report.md` with
-  frontmatter `status: confirmed`.
+description: Parallel web research with synthesis and citation checks
 version: 1.0.0
 metadata:
   hermes:

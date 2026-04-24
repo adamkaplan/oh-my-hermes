@@ -1,10 +1,6 @@
 ---
 name: omh-ralph
-description: >
-  Verified execution loop: picks the next task from a plan, delegates to an executor
-  subagent, verifies completion with fresh evidence, and updates state. One task per
-  invocation — the caller re-invokes until all tasks pass. Enforces the Iron Law:
-  every change must be verified through builds, tests, and independent review.
+description: "Verified execution: one task/invocation, iron-law checks"
 version: 2.0.0
 metadata:
   hermes:

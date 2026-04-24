@@ -1,10 +1,6 @@
 ---
 name: omh-autopilot
-description: >
-  Full autonomous pipeline from idea to verified code. Composes deep-interview,
-  ralplan, and ralph into 6 phases: Requirements → Planning → Execution → QA →
-  Validation → Cleanup. One phase step per invocation — the caller re-invokes
-  until complete. Detects existing artifacts to skip completed phases.
+description: "Idea-to-code pipeline: interview→plan→execute→verify"
 version: 2.0.0
 metadata:
   hermes:

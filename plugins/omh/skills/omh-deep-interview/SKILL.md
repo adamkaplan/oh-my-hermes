@@ -1,10 +1,6 @@
 ---
 name: omh-deep-interview
-description: >
-  Socratic requirements interview that reduces ambiguity before planning or implementation.
-  Asks targeted questions across four dimensions (Goal, Constraints, Success Criteria,
-  Existing Context), tracks coverage with coarse bins, and produces a consumer-ready
-  specification. Exit is always user-confirmed. Use when goals are vague or underspecified.
+description: Socratic requirements interview for vague/ambiguous goals
 version: 2.0.0
 metadata:
   hermes:
