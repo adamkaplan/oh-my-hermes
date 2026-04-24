@@ -7,10 +7,10 @@ description: >
   and re-invoke to resume. Sentinel: `.omh/research/{slug}-report.md` with
   frontmatter `status: confirmed`.
 version: 1.0.0
-tags: [research, web, synthesis, parallel, omh]
-category: omh
 metadata:
   hermes:
+    tags: [research, web, synthesis, parallel, omh]
+    category: omh
     requires_toolsets: [terminal, omh, web]
 ---
 

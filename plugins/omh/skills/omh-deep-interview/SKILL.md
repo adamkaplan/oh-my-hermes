@@ -6,10 +6,10 @@ description: >
   Existing Context), tracks coverage with coarse bins, and produces a consumer-ready
   specification. Exit is always user-confirmed. Use when goals are vague or underspecified.
 version: 2.0.0
-tags: [interview, requirements, socratic, ambiguity, specification]
-category: omh
 metadata:
   hermes:
+    tags: [interview, requirements, socratic, ambiguity, specification]
+    category: omh
     requires_toolsets: [terminal, omh]
 ---
 

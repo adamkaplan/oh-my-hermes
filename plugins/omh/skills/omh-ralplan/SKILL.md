@@ -5,10 +5,10 @@ description: >
   iterate until consensus or max rounds. Produces a vetted implementation plan. Use for any
   non-trivial task where a single perspective might miss blind spots.
 version: 2.0.0
-tags: [planning, multi-agent, consensus, architecture]
-category: omh
 metadata:
   hermes:
+    tags: [planning, multi-agent, consensus, architecture]
+    category: omh
     requires_toolsets: [terminal, omh]
 ---
 
