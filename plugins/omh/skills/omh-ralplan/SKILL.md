@@ -1,14 +1,11 @@
 ---
 name: omh-ralplan
-description: >
-  Consensus planning via multi-agent debate. Three perspectives (Planner, Architect, Critic)
-  iterate until consensus or max rounds. Produces a vetted implementation plan. Use for any
-  non-trivial task where a single perspective might miss blind spots.
+description: "Planner+Architect+Critic→consensus impl plan (≤3 rounds)"
 version: 2.0.0
-tags: [planning, multi-agent, consensus, architecture]
-category: omh
 metadata:
   hermes:
+    tags: [planning, multi-agent, consensus, architecture]
+    category: omh
     requires_toolsets: [terminal, omh]
 ---
 

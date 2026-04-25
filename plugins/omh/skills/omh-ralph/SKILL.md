@@ -1,16 +1,12 @@
 ---
 name: omh-ralph
-description: >
-  Verified execution loop: picks the next task from a plan, delegates to an executor
-  subagent, verifies completion with fresh evidence, and updates state. One task per
-  invocation — the caller re-invokes until all tasks pass. Enforces the Iron Law:
-  every change must be verified through builds, tests, and independent review.
+description: "execute plan: 1 task/call, verify evidence, iron law"
 version: 2.0.0
-tags: [execution, verification, persistence, iron-law, loop]
-category: omh
 metadata:
   hermes:
     requires_toolsets: [terminal, omh]
+    tags: [execution, verification, persistence, iron-law, loop]
+    category: omh
 ---
 
 # OMH Ralph — Verified Execution (v2)
